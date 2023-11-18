@@ -10,7 +10,14 @@
 
 int main (int argc, char **argv) {
 
-	printf("testing\n");
+	if(argc == 1)
+	{
+		//this will run interactive mode because no arguments
+	}
+	else
+	{
+		//this will run batch mode because there is one argument
+	}
 
 
 
