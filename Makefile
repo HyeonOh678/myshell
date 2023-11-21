@@ -3,7 +3,6 @@ CFLAGS = -g -Wvla -Wall -fsanitize=address,undefined
 
 mysh: obj/mysh.o obj/arraylist.o
 	$(CC) $(CFLAGS) obj/mysh.o obj/arraylist.o -o mysh
-	mv mysh bin
 
 obj/arraylist.o: src/arraylist.c
 	$(CC) $(CFLAGS) src/arraylist.c -c -o arraylist.o
