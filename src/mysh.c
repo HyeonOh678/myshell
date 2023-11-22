@@ -19,7 +19,8 @@ int main (int argc, char **argv) {
 	if (argc == 1) {
 		mode = INTERACTIVE;
 		printf("Starting mysh in interactive mode\n");
-	} else if (argc == 2) {
+	} 
+	else if (argc == 2) {
 		mode = BATCH;
 
 		if (access(argv[1], R_OK) == 0) {
@@ -27,15 +28,29 @@ int main (int argc, char **argv) {
 				fprintf(stderr, "ERROR: Invalid file, %s is not a shell script\n", argv[1]);
 				return EXIT_FAILURE;
 			}
-		} else {
+		} 
+		else {
 			fprintf(stderr, "ERROR: Invalid file: %s\n", strerror(errno));
 			return EXIT_FAILURE;
 		}
-	} else {
+
+		printf("in batch mode now\n");
+		//if file name is valid, we will pass it to our parser where it will open the file and read commands 
+		//it will read line by line 
+                struct stat st;
+                char* name = argv[0];
+
+                
+
+			
+
+	} 
+	else {
 		fprintf(stderr, "ERROR: Cannot initialize mysh with an argument count of %d\n", argc);
 		return EXIT_FAILURE;
 	}
-
+	
+	/*
 	while (1) {
 		printf("mysh> ");
 
@@ -55,6 +70,6 @@ int main (int argc, char **argv) {
 				// figure out what to do with the command
 			// else error and return
 	}
-
+	*/
 	return EXIT_SUCCESS;
 }
