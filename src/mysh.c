@@ -24,10 +24,8 @@ int main (int argc, char **argv) {
 		mode = BATCH;
 
 		if (access(argv[1], R_OK) == 0) {
-			if (strcmp(argv[1] + strlen(argv[1]) - 3, ".sh") != 0) {
-				fprintf(stderr, "ERROR: Invalid file, %s is not a shell script\n", argv[1]);
-				return EXIT_FAILURE;
-			}
+			fprintf(stderr, "ERROR: Invalid file, %s is not a shell script\n", argv[1]);
+			return EXIT_FAILURE;
 		} 
 		else {
 			fprintf(stderr, "ERROR: Invalid file: %s\n", strerror(errno));
