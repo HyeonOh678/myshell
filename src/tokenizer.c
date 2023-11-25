@@ -11,7 +11,7 @@
 #define DEBUG 0
 #define BUFFLEN 1
 
-void tokenizer(char* line)
+void tokenizer(arraylist_t* arr, char* line)
 {
 	int left = 0;
         int right = 0;
@@ -44,7 +44,7 @@ void tokenizer(char* line)
                         }
 			
 			//here we will append the token into the arraylist by calling the push function
-
+			al_push(arr, token);
                         printf("token is: %s \n", token);
                         
                         right++;
