@@ -4,70 +4,141 @@
 #include <string.h>
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include "arraylist.h"
 #include "mysh.h"
 
+char* readLine (int, char*);
+int hit_EOF = 0;
+
 int main (int argc, char **argv) {
 	enum mode_type {
 		BATCH,
-		INTERACTIVE
+		INTERACTIVE,
+		INVALID
 	};
-	enum mode_type mode;
+	
+	enum mode_type mode = INVALID;
+	int fd;
 
-	// validation
+	// initializes shell: sets mode and validates argument for batch mode
 	if (argc == 1) {
 		mode = INTERACTIVE;
+		fd = STDIN_FILENO;
 		printf("Starting mysh in interactive mode\n");
-	} 
-	else if (argc == 2) {
-		mode = BATCH;
-
+	} else if (argc == 2) {
 		if (access(argv[1], R_OK) == 0) {
-			fprintf(stderr, "ERROR: Invalid file, %s is not a shell script\n", argv[1]);
-			return EXIT_FAILURE;
-		} 
-		else {
+			struct stat file_buffer;
+			if (stat(argv[1], &file_buffer) == 0) {
+				if (S_ISDIR(file_buffer.st_mode) == 0) {
+					fd = open(argv[1], O_RDONLY);
+					if (fd > 0) {
+						mode = BATCH;
+						printf("Starting mysh in batch mode\n");
+					} else {
+						fprintf(stderr, "ERROR: Cannot open %s: %s\n", argv[1], strerror(errno));
+					}
+				} else {
+					fprintf(stderr, "ERROR: Cannot run mysh on %s because it is a directory\n", argv[1]);
+				}
+			} else {
+				fprintf(stderr, "Error checking file type for %s: %s\n", argv[1], strerror(errno));
+			} 
+		} else {
 			fprintf(stderr, "ERROR: Invalid file: %s\n", strerror(errno));
-			return EXIT_FAILURE;
 		}
+	} else {
+		fprintf(stderr, "ERROR: Invalid argument count of %d\n", argc);
+	}
 
-		printf("in batch mode now\n");
-		//if file name is valid, we will pass it to our parser where it will open the file and read commands 
-		//it will read line by line 
-                struct stat st;
-                char* name = argv[0];
-
-                
-
-			
-
-	} 
-	else {
-		fprintf(stderr, "ERROR: Cannot initialize mysh with an argument count of %d\n", argc);
+	if (mode == INVALID) {
 		return EXIT_FAILURE;
 	}
-	
-	/*
+
+
+	// main input loop
 	while (1) {
 		printf("mysh> ");
 
 		char* input;
 		if (mode == INTERACTIVE) {
-			// take user input and wait
+			input = malloc(4);
+			printf("%p", input);
+			read(fd, input, 3);
+			// input = malloc(5);
+			// read(STDIN_FILENO, input, 1);
+			// *(input + 1) = '\0';
 		} else {
-			// read a line
+			input = readLine(fd, input);
+			if (input == NULL) {
+				fprintf(stderr, "ERROR: readLine returns null\n");
+				return EXIT_FAILURE;
+			}
+
+			// debug
+			printf("%s;\n", input);
 		}
 
-		// if empty user input pass
-		// if end of .sh file break
+		if (strlen(input) != 0) {
 
-		// else tokenize
+			// tokenize
+
+
 			// if exit break
 			// if valid input
 				// figure out what to do with the command
 			// else error and return
+		}
+
+		// if mode == BATCH ?
+		free(input);
+
+		if (hit_EOF) {
+			break;
+		}
 	}
-	*/
+	
+	if (mode == BATCH) {
+		if (close(fd) == -1) {
+			fprintf(stderr, "ERROR: Cannot close %s: %s\n", argv[1], strerror(errno));
+			return EXIT_FAILURE;
+		}
+	}
+
 	return EXIT_SUCCESS;
 }
+
+char* readLine (int fd, char* buffer) {
+	buffer = malloc(4);
+	int len = 0, capacity = 4;
+	char* i = buffer;
+	while (1) {
+		if (len > capacity - 1) {
+			capacity = capacity * 2;
+			buffer = realloc(buffer, capacity);
+			i = buffer + len;
+		}
+		int bytes_read = read(fd, i, 1);
+		
+
+		if (bytes_read == -1) {
+			fprintf(stderr, "ERROR: Cannot read from file: %s\n", strerror(errno));
+			return NULL;
+		} else if (bytes_read == 0) {
+			hit_EOF = 1;
+			*i = '\0';
+			return buffer;
+		} else {
+			if (*i == '\n') {
+				*i = '\0';
+				return buffer;
+			}
+			len++;
+		}
+
+		i++;
+	}
+}
+
+
