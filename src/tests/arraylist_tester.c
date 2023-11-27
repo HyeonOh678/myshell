@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "../arraylist.h"
 
-void display_array_list(arraylist_t*);
-
 int main(int argc, char** argv) {
     for (int i = 0; i < 2; i++) {
         // initialized empty arraylist
@@ -21,14 +19,4 @@ int main(int argc, char** argv) {
         // deconstructing
         al_destroy(my_al);
     }
-}
-
-void display_array_list (arraylist_t* arraylist) {
-    printf("---\n");
-    printf("Length: %u\n", arraylist->length);
-    printf("Size: %u\n", arraylist->size);
-    for (int i = 0; i < arraylist->length; i++) {
-        printf("a[%d]: \t%p\t\t *a[%d]: \t%s\n", i, arraylist->head[i], i, al_get(arraylist, i));
-    }
-    printf("---\n");
 }

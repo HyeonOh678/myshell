@@ -77,6 +77,15 @@ int al_push(arraylist_t *L, char* str)
     return 1;
 }
 
+void display_array_list (arraylist_t* arraylist) {
+    printf("---\n");
+    printf("Length: %u\n", arraylist->length);
+    printf("Size: %u\n", arraylist->size);
+    for (int i = 0; i < arraylist->length; i++) {
+        printf("a[%d]: \t%p\t\t *a[%d]: \t%s\n", i, arraylist->head[i], i, al_get(arraylist, i));
+    }
+    printf("---\n");
+}
 
 // // remove item from end of list
 // // write item to dest (if dest is non-NULL)
