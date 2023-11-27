@@ -63,8 +63,10 @@ int main (int argc, char **argv) {
 
 	// main input loop
 	do {
-		printf("mysh> ");
-		fflush(stdout);
+		if (mode == INTERACTIVE) {
+			printf("mysh> ");
+			fflush(stdout);
+		}
 
 		char* input = readLine(input);
 		if (input == NULL) {
@@ -73,21 +75,24 @@ int main (int argc, char **argv) {
 		}
 
 		// debug
-		// printf(";%s;\n", input);
+		printf(";%s;\n", input);
 
 		if (strlen(input) != 0) {
-
-
-
+			arraylist_t* arraylist = al_create(1);
+			tokenizer(arraylist, input);
+			
+			// debug
+			display_array_list(arraylist);
+			
 			// if exit break
 			// if valid input
 				// figure out what to do with the command
 			// else error and return
+
+			al_destroy(arraylist);
 		}
 
-		// if mode == BATCH ?
 		free(input);
-
 		if (hit_EOF) {
 			break;
 		}
