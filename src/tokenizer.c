@@ -30,9 +30,20 @@ void tokenizer(arraylist_t* arr, char* line)
                     right++;
                     left++;
                 }
-                else if(right == lineSize) //second edge case: if the right pointer is at the last index, move it
+                else if(right == lineSize && line[left] != ' ' && line[right] != ' ') //second edge case: if the right pointer is at the last index, move it
                 {
-                    right++;
+                    //allocate space for token from right - left
+                        token = realloc(token, right - left);
+                        position = left;
+                        for(int i = 0; i < right - left; i++)
+                        {
+                                token[i] = line[position];
+                                position++;
+                        }
+			al_push(arr, token);
+                        printf("token is: %s \n", token);
+                        right++;
+                        token = NULL;
                 }
                 else if(line[right] == ' ' || line[right] == '\0' && line[left] != ' ')
                 {
@@ -45,7 +56,6 @@ void tokenizer(arraylist_t* arr, char* line)
                                 position++;
                         }
 			
-			//here we will append the token into the arraylist by calling the push function
 			al_push(arr, token);
                         printf("token is: %s \n", token);
                         
