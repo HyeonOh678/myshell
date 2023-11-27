@@ -19,10 +19,10 @@ int main(int argc, char** argv)
 	char* line5 = "then foo < bar baz";
 	
 	al_push(arr, line1);
-	// tokenizer(arr, line2);
-	// tokenizer(arr, line3);
-	// tokenizer(arr, line4);
-	// tokenizer(arr, line5);
+	al_push(arr, line2);
+	al_push(arr, line3);
+	al_push(arr, line4);
+	al_push(arr, line5);
 
 	display_array_list(arr);
 	al_destroy(arr);
