@@ -75,14 +75,14 @@ int main (int argc, char **argv) {
 		}
 
 		// debug
-		printf(";%s;\n", input);
+		//printf(";%s;\n", input);
 
 		if (strlen(input) != 0) {
 			arraylist_t* arraylist = al_create(1);
-			tokenizer(arraylist, input);
+			//tokenizer(arraylist, input);
 			
 			// debug
-			display_array_list(arraylist);
+			//display_array_list(arraylist);
 			
 			// if exit break
 			// if valid input
