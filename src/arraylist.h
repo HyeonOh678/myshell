@@ -1,3 +1,6 @@
+#ifndef ARRAYLIST_H
+#define ARRAYLIST_H
+
 typedef struct {
     char** head;
     unsigned length;  // number of Nodes in list
@@ -11,3 +14,5 @@ void al_destroy(arraylist_t *);
 char* al_get(arraylist_t*, unsigned);
 
 // int al_pop(arraylist_t *, char*);
+
+#endif

@@ -4,6 +4,8 @@
 #include <string.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include "arraylist.h"
+#include "tokenizer.h"
 
 //this will parse the arguments given to mysh
 //first let's make parse for batch mode for now

@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include "../arraylist.h"
+#include "../tokenizer.h"
 
 void display_array_list (arraylist_t* arraylist) {
     printf("---\n");

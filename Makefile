@@ -2,19 +2,23 @@ CC = gcc
 CFLAGS = -g -Wvla -Wall -fsanitize=address,undefined
 
 # executables
-mysh: obj/mysh.o obj/arraylist.o
-	$(CC) $(CFLAGS) obj/mysh.o obj/arraylist.o -o mysh
+mysh: obj/mysh.o obj/arraylist.o obj/tokenizer.o
+	$(CC) $(CFLAGS) obj/mysh.o obj/arraylist.o obj/tokenizer.o -o mysh
 
 arraylist_tester: obj/arraylist_tester.o obj/arraylist.o
 	$(CC) $(CFLAGS) obj/arraylist_tester.o obj/arraylist.o -o arraylist_tester
 
-token_tester: obj/token_tester.o obj/arraylist.o
-	$(CC) $(CFLAGS) obj/token_tester.o obj/arraylist.o -o token_tester
+token_tester: obj/token_tester.o obj/arraylist.o obj/tokenizer.o
+	$(CC) $(CFLAGS) obj/token_tester.o obj/arraylist.o obj/tokenizer.o -o token_tester
 
 # object files
 obj/arraylist.o: src/arraylist.c
 	$(CC) $(CFLAGS) src/arraylist.c -c -o arraylist.o
 	mv arraylist.o obj
+
+obj/tokenizer.o: src/tokenizer.c
+	$(CC) $(CFLAGS) src/tokenizer.c -c -o tokenizer.o
+	mv tokenizer.o obj
 
 obj/arraylist_tester.o: src/tests/arraylist_tester.c
 	$(CC) $(CFLAGS) src/tests/arraylist_tester.c -c -o arraylist_tester.o
@@ -30,4 +34,4 @@ obj/mysh.o: src/mysh.c
 
 # misc
 clean:
-	rm obj/* bin/*
+	rm obj/*

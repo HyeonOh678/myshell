@@ -7,7 +7,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "arraylist.h"
-#include "mysh.h"
+#include "tokenizer.h"
 
 char* readLine (char*);
 
