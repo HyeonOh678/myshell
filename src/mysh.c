@@ -9,19 +9,23 @@
 #include "arraylist.h"
 #include "mysh.h"
 
-char* readLine (int, char*);
+char* readLine (char*);
+
+enum mode_type {
+	BATCH,
+	INTERACTIVE,
+	INVALID
+};
+
+// global variables
+enum mode_type mode = INVALID;
+int fd;
 int hit_EOF = 0;
 
-int main (int argc, char **argv) {
-	enum mode_type {
-		BATCH,
-		INTERACTIVE,
-		INVALID
-	};
-	
-	enum mode_type mode = INVALID;
-	int fd;
 
+
+
+int main (int argc, char **argv) {
 	// initializes shell: sets mode and validates argument for batch mode
 	if (argc == 1) {
 		mode = INTERACTIVE;
@@ -58,31 +62,21 @@ int main (int argc, char **argv) {
 
 
 	// main input loop
-	while (1) {
+	do {
 		printf("mysh> ");
+		fflush(stdout);
 
-		char* input;
-		if (mode == INTERACTIVE) {
-			input = malloc(4);
-			printf("%p", input);
-			read(fd, input, 3);
-			// input = malloc(5);
-			// read(STDIN_FILENO, input, 1);
-			// *(input + 1) = '\0';
-		} else {
-			input = readLine(fd, input);
-			if (input == NULL) {
-				fprintf(stderr, "ERROR: readLine returns null\n");
-				return EXIT_FAILURE;
-			}
-
-			// debug
-			printf("%s;\n", input);
+		char* input = readLine(input);
+		if (input == NULL) {
+			fprintf(stderr, "ERROR: readLine returns null\n");
+			return EXIT_FAILURE;
 		}
+
+		// debug
+		// printf(";%s;\n", input);
 
 		if (strlen(input) != 0) {
 
-			// tokenize
 
 
 			// if exit break
@@ -97,7 +91,7 @@ int main (int argc, char **argv) {
 		if (hit_EOF) {
 			break;
 		}
-	}
+	} while (1);
 	
 	if (mode == BATCH) {
 		if (close(fd) == -1) {
@@ -109,11 +103,16 @@ int main (int argc, char **argv) {
 	return EXIT_SUCCESS;
 }
 
-char* readLine (int fd, char* buffer) {
+char* readLine (char* buffer) {
 	buffer = malloc(4);
 	int len = 0, capacity = 4;
 	char* i = buffer;
-	while (1) {
+
+	if (mode == BATCH) {
+
+	}
+
+	while (len == 0 || *(i - 1) != '\n') {
 		if (len > capacity - 1) {
 			capacity = capacity * 2;
 			buffer = realloc(buffer, capacity);
@@ -139,6 +138,7 @@ char* readLine (int fd, char* buffer) {
 
 		i++;
 	}
+
+	fprintf(stderr, "ERROR: This loop isn't supposed to terminate\n");
+	return NULL;
 }
-
-
