@@ -11,23 +11,33 @@ int main(int argc, char** argv)
 {
 	arraylist_t* arr = al_create(5);
 	
-
-	char* line1 = "cd subdir";
-	char* line2 = " echo hello";
-	char* line3 = "cd sub";
-	char* line4 = "foo bar < baz | quux *.txt > spam";
-	char* line5 = "then foo < bar baz";
-	char* line6 = "cd boo<bar";
+	char* line[10];
+	line[0] = "cd subdir";
+	line[1] = " echo hello";
+	line[2] = "   cd sub  ";
+	line[3] = "foo bar < baz | quux *.txt > spam";
+	line[4] = "then foo < bar baz";
+	line[5] = "cd boo<bar";
+	line[6] = "exit";
+	line[7] = "foo bar<baz";
+	line[8] = "foo|bar";
+	line[9] = "foo<bar<baz";
 	
-	tokenizer(arr, line1);
-	tokenizer(arr, line2);
-	tokenizer(arr, line3);
-	tokenizer(arr, line4);
-	tokenizer(arr, line5);
-	tokenizer(arr, line6);
 
-	display_array_list(arr);
+
+	for (int i = 0; i < sizeof(line)/sizeof(char*); i++) {
+		tokenizer(arr, line[i]);
+		
+		printf("LINE %d\n", i);
+		display_array_list(arr);
+		printf("\n\n\n");
+		
+		al_destroy(arr);
+		arr = al_create(5);
+	}
+
 	al_destroy(arr);
+
 	
 
 
