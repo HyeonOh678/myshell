@@ -15,66 +15,17 @@
 
 void tokenizer(arraylist_t* arr, char* line)
 {
-	int left = 0;
-        int right = 0;
-        int lineSize = strlen(line);
-        char* token = NULL;
-        int position = left;
-        
-	//pass through every character in line
-        while(right <= lineSize)
-        {	
-		//first edge case: if both pointers are at a whitespace, move both
-                if(line[right] == ' ' && line[left] == ' ')
-                {
-                    right++;
-                    left++;
-                }
-                else if(right == lineSize && line[left] != ' ' && line[right] != ' ') //second edge case: if the right pointer is at the last index, move it
-                {
-                    //allocate space for token from right - left
-                        token = realloc(token, right - left);
-                        position = left;
-                        for(int i = 0; i < right - left; i++)
-                        {
-                                token[i] = line[position];
-                                position++;
-                        }
-			al_push(arr, token);
-                        printf("token is: %s \n", token);
-                        right++;
-                        token = NULL;
-                }
-                else if(line[right] == ' ' || line[right] == '\0' && line[left] != ' ')
-                {
-                        //allocate space for token from right - left
-                        token = realloc(token, right - left);
-                        position = left;
-                        for(int i = 0; i < right - left; i++)
-                        {
-                                token[i] = line[position];
-                                position++;
-                        }
-			
-			al_push(arr, token);
-                        printf("token is: %s \n", token);
-                        
-                        right++;
-                        left = right;
-                        token = NULL;
-                        
-
-                }
-                else 
-                {
-                    right++;
-                    
-                }
-                       
-                
-                    
-
+	
+	char* token;
+        char* line2 = strdup(line);
+       
+        token = strtok(line2, " ");
+        do
+        {
+	    al_push(arr, token);
+            printf("token: %s\n", token);
         }
+        while (token = strtok(NULL, " "));
 
 
 }
