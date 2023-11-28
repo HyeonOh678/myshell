@@ -14,15 +14,17 @@ int main(int argc, char** argv)
 
 	char* line1 = "cd subdir";
 	char* line2 = " echo hello";
-	char* line3 = "cd subdir  ";
+	char* line3 = "cd sub";
 	char* line4 = "foo bar < baz | quux *.txt > spam";
 	char* line5 = "then foo < bar baz";
+	char* line6 = "cd boo<bar";
 	
-	al_push(arr, line1);
-	al_push(arr, line2);
-	al_push(arr, line3);
-	al_push(arr, line4);
-	al_push(arr, line5);
+	tokenizer(arr, line1);
+	tokenizer(arr, line2);
+	tokenizer(arr, line3);
+	tokenizer(arr, line4);
+	tokenizer(arr, line5);
+	tokenizer(arr, line6);
 
 	display_array_list(arr);
 	al_destroy(arr);
