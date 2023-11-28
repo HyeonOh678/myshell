@@ -26,6 +26,7 @@ void tokenizer(arraylist_t* arr, char* line)
             printf("token: %s\n", token);
         }
         while (token = strtok(NULL, " "));
-
+	
+	free(line2);
 
 }
