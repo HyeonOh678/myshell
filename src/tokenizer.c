@@ -17,9 +17,29 @@ void tokenExpansion(arraylist_t* arr, char* token)
 	//this is to search for filenames with wildcards
 	glob_t result;
 	int i;
+	int isDirectory = 0;
+	int tokenLen = strlen(token);
+
+	for(int i = 0; i < tokenLen; i++)
+	{
+		if(token[i] == '/')
+		{
+			isDirectory = 1;
+			break;
+		}
+	}
+
+	if(isDirectory == 1)
+	{
+		chdir(token);
+	}
 
 	//GLOB_NOCHECK means it will return original pattern if no matching files are found
 	//GLOB_TILDE allows the wave symbol to be used in the pattern to traverse to the home directory
+	
+	//first check if token taken is a path, then we will find every match
+	
+
 	if(glob(token, GLOB_NOCHECK | GLOB_TILDE, NULL, &result) == 0)
 	{
 		for(i = 0; i < result.gl_pathc && argc < MAX_ARGS - 1;  i++)
