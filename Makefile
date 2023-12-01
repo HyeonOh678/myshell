@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wvla -Wall -fsanitize=address,undefined -std=c99
+CFLAGS = -g -Wvla -Wall -fsanitize=address,undefined 
 
 # executables
 mysh: obj/mysh.o obj/arraylist.o obj/tokenizer.o
