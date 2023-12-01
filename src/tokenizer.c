@@ -5,6 +5,7 @@
 #include "tokenizer.h"
 #include <string.h>
 #include <glob.h>
+#include <fcntl.h>
 
 #define MAX_ARGS 100
 
@@ -77,12 +78,12 @@ void tokenizer(arraylist_t* arr, char* line)
 		{
 			i++;
 		}
-		else if(i == lineSize && line[left] != ' ' && line[i] != ' ')
+		else if(i == lineSize - 1 && line[left] != ' ' && line[i] != ' ')
                 {
-                        int size = i - left + 1;
+                        int size = i - left + 2;
                         char* str = malloc(sizeof(char)* size);
                         memcpy(str, &line[left], size);
-                        str[i - left] = '\0';
+                        str[i - left + 1] = '\0';
 			
 			//we will see if the token has a wildcard symbol 
 			if(isWildCard(str) == 0)
