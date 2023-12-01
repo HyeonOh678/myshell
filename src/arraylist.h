@@ -12,7 +12,10 @@ unsigned al_length(arraylist_t *);
 int al_push(arraylist_t *, char*);
 void al_destroy(arraylist_t *);
 char* al_get(arraylist_t*, unsigned);
-void display_array_list(arraylist_t*);
+void al_print(arraylist_t*);
+int al_contains(arraylist_t*, char*);
+int al_push(arraylist_t *, char*);
+
 
 // int al_pop(arraylist_t *, char*);
 

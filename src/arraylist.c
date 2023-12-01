@@ -6,8 +6,8 @@
 
     // ensure that definitions are consistent with header
 
-#ifndef DEBUG
-#define DEBUG 0
+#ifndef ARRL_DEBUG
+#define ARRL_DEBUG 0
 #endif
 
 int al_init(arraylist_t *, unsigned);
@@ -64,7 +64,7 @@ int al_push(arraylist_t *L, char* str)
         if (new_head == NULL)
             return 0;
 
-        if (DEBUG)
+        if (ARRL_DEBUG)
             printf("Increased size to %d from %d\n", new_size, L->size);
 
         L->size = new_size;
@@ -77,30 +77,40 @@ int al_push(arraylist_t *L, char* str)
     return 1;
 }
 
-void display_array_list (arraylist_t* arraylist) {
+void al_print (arraylist_t* L) {
     printf("---\n");
-    printf("Length: %u\n", arraylist->length);
-    printf("Size: %u\n", arraylist->size);
-    for (int i = 0; i < arraylist->length; i++) {
-        printf("a[%d]: \t%p\t\t *a[%d]: \t%s\n", i, arraylist->head[i], i, al_get(arraylist, i));
+    printf("Length: %u\n", L->length);
+    printf("Size: %u\n", L->size);
+    for (int i = 0; i < L->length; i++) {
+        printf("a[%d]: \t%p\t\t *a[%d]: \t;%s;\n", i, L->head[i], i, al_get(L, i));
     }
     printf("---\n");
 }
 
-// // remove item from end of list
-// // write item to dest (if dest is non-NULL)
-// // return 1 on success, 0 on failure (i.e., list is empty)
+int al_contains(arraylist_t* L, char* str) {
+    int matches = 0;
+    for (int i = 0; i < L->length; i++) {
+        if(strcmp(al_get(L, i), str) == 0) {
+            matches++;
+        }
+    }
+    return matches;
+}
 
-// int al_pop(arraylist_t *L, elem_t *dest)
-// {
-//     if (L->length == 0) return 0;
+// remove item from end of list
+// write item to dest (if dest is non-NULL)
+// return 1 on success, 0 on failure (i.e., list is empty)
+int al_remove(arraylist_t *L, char* dest)
+{
+    if (L->length == 0)
+        return 0;
 
-//     L->length--;
-//     if (dest) *dest = L->data[L->length];
-//     if (DEBUG) printf("Removed %d; new length %d\n", L->data[L->length], L->length);
+    // L->length--;
+    // if (dest) *dest = L->data[L->length];
+    // if (DEBUG) printf("Removed %d; new length %d\n", L->data[L->length], L->length);
 
-//     return 1;
-// }
+    return 1;
+}
 
 void al_destroy(arraylist_t *L)
 {

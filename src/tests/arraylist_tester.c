@@ -6,7 +6,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 2; i++) {
         // initialized empty arraylist
         arraylist_t* my_al = al_create(1);
-        display_array_list(my_al);
+        al_print(my_al);
 
 
         // after adding elements
@@ -14,7 +14,12 @@ int main(int argc, char** argv) {
             char x[] = {97 + j, 97 + j, 97 + j, 97 + j, 97 + j, '\0'};
             al_push(my_al, (char*) x);
         }
-        display_array_list(my_al);
+        al_print(my_al);
+
+        // tests if remove works, remove a random element at a time
+        if (i == 1) {
+            //al_remove()
+        }
 
         // deconstructing
         al_destroy(my_al);

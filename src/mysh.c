@@ -9,7 +9,12 @@
 #include "arraylist.h"
 #include "tokenizer.h"
 
+#ifndef MYSH_DEBUG
+#define MYSH_DEBUG 1
+#endif
+
 char* readLine (char*);
+
 
 enum mode_type {
 	BATCH,
@@ -21,9 +26,7 @@ enum mode_type {
 enum mode_type mode = INVALID;
 int fd;
 int hit_EOF = 0;
-
-
-
+int prev_return_value;
 
 int main (int argc, char **argv) {
 	// initializes shell: sets mode and validates argument for batch mode
@@ -74,15 +77,17 @@ int main (int argc, char **argv) {
 			return EXIT_FAILURE;
 		}
 
-		// debug
-		//printf(";%s;\n", input);
+		if (MYSH_DEBUG)
+			printf(";%s;\n", input);
 
 		if (strlen(input) != 0) {
 			arraylist_t* arraylist = al_create(1);
-			//tokenizer(arraylist, input);
+			tokenizer(arraylist, input);
 			
-			// debug
-			//display_array_list(arraylist);
+			if (MYSH_DEBUG) {
+				printf("%d\n", al_contains(arraylist, "|"));
+				al_print(arraylist);
+			}
 			
 			// if exit break
 			// if valid input

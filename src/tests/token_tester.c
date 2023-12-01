@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 		tokenizer(arr, line[i]);
 		
 		printf("LINE %d\n", i);
-		display_array_list(arr);
+		al_print(arr);
 		printf("\n\n\n");
 		
 		al_destroy(arr);
