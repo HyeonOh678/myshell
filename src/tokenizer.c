@@ -77,46 +77,44 @@ int isWildCard(char* token)
 	return isWildCard;
 }
 
+int isRedirect(char* token)
+{
+	int isRedirect = 0;
+        //first check if the token has the wildcard symbol in it *
+        int tokenLen = strlen(token);
+        for(int i = 0; i < tokenLen; i++)
+        {
+                if(token[i] == '<' || token[i] == '>')
+                {
+                        isRedirect = 1;
+                        break;
+                }
 
-void tokenizer(arraylist_t* arr, char* line)
+        }
+
+        return isRedirect;
+
+}
+
+
+int tokenizer(arraylist_t* arr, char* line)
 {
 	int lineSize = strlen(line);
 	int i = 0;
 	int left = 0;
+	int isPrevTokenRedirect = 0;
 	while(i <= lineSize)
 	{
 		if(line[i] == ' ' && line[left] == ' ')
 		{
 			i++;
-			left++;
+			left = i;
 		}
 		else if(i == lineSize && line[left] == ' ' && line[i] == ' ')
 		{
 			i++;
+			left = i;
 		}
-		else if(i == lineSize - 1 && line[left] != ' ' && line[i] != ' ')
-                {
-                        int size = i - left + 2;
-                        char* str = malloc(sizeof(char)* size);
-                        memcpy(str, &line[left], size);
-                        str[i - left + 1] = '\0';
-			
-			//we will see if the token has a wildcard symbol 
-			if(isWildCard(str) == 0)
-			{
-				al_push(arr, str);
-			}
-			else
-			{
-				tokenExpansion(arr, str);
-			}
-			
-                        //printf("token is: %s\n", str);
-                        i++;
-                        left = i;
-                        free(str);
-
-                }
 	       	else if(line[i] == ' ' && line[left] != ' ')
 		{
 			int size = i - left + 1;
@@ -124,14 +122,21 @@ void tokenizer(arraylist_t* arr, char* line)
 		        memcpy(str, &line[left], size);
 			str[i - left] = '\0';
 			//we will see if the token has a wildcard symbol 
-                        if(isWildCard(str) == 0)
+                        if(isWildCard(str) == 0) //if the token doesn't contain wildcard, reset isPrevTokenRedirect to 0 anyways
                         {
                                 al_push(arr, str);
+                                isPrevTokenRedirect = 0;
                         }
-                        else
+                        else if(isWildCard(str) == 1 && isPrevTokenRedirect == 0) //if the token contains a wildcard but the prev token is not a redirect , expand token
                         {
                                 tokenExpansion(arr, str);
                         }
+                        else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
+                        {
+                                printf("Previous token was a redirect and current token contains a wildcard. Invalid.");
+				//return 0;
+                        }
+
 
 			i++;
 			left = i;
@@ -143,15 +148,22 @@ void tokenizer(arraylist_t* arr, char* line)
 		    char* str = malloc(sizeof(char)* size);
 		    memcpy(str, &line[left], size);
 		    str[i - left] = '\0'; 
-		    //we will see if the token has a wildcard symbol 
-                        if(isWildCard(str) == 0)
+		    //we will see if the token has a wildcard symbol
+		     
+                        if(isWildCard(str) == 0) //if the token doesn't contain wildcard, reset isPrevTokenRedirect to 0 anyways
                         {
                                 al_push(arr, str);
+				isPrevTokenRedirect = 0;
                         }
-                        else
+                        else if(isWildCard(str) == 1 && isPrevTokenRedirect == 0) //if the token contains a wildcard but the prev token is not a redirect , expand token
                         {
                                 tokenExpansion(arr, str);
                         }
+			else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
+			{
+				printf("Previous token was a redirect and current token contains a wildcard. Invalid.\n");
+				//return 0;
+			}
 
 		    free(str);
 		    //now we take the single char token
@@ -159,6 +171,7 @@ void tokenizer(arraylist_t* arr, char* line)
             	    char* str2 = malloc(sizeof(char)* size2);
             	    memcpy(str2, &line[i], size2);
             	    str2[1] = '\0';
+		    isPrevTokenRedirect = 1;
             	    al_push(arr,str2);
             	    i++;
             	    left = i;
@@ -170,11 +183,42 @@ void tokenizer(arraylist_t* arr, char* line)
 		    char* str = malloc(sizeof(char) * size);
 		    memcpy(str, &line[i], size);
 		    str[1] = '\0';
+		    isPrevTokenRedirect = 1;
 		    al_push(arr,str);
 		    i++;
 		    left = i;
 		    free(str);
-		}	
+		}
+		else if(i == lineSize - 1 && line[left] != ' ' && line[i] != ' ')
+                {
+                        int size = i - left + 2;
+                        char* str = malloc(sizeof(char)* size);
+                        memcpy(str, &line[left], size);
+                        str[i - left + 1] = '\0';
+
+			//we will see if the token has a wildcard symbol 
+			if(isWildCard(str) == 0) //if the token doesn't contain wildcard, reset isPrevTokenRedirect to 0 anyways
+                        {
+                                al_push(arr, str);
+                                isPrevTokenRedirect = 0;
+                        }
+                        else if(isWildCard(str) == 1 && isPrevTokenRedirect == 0) //if the token contains a wildcard but the prev token is not a redirect , expand token
+                        {
+                                tokenExpansion(arr, str);
+                        }
+                        else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
+                        {
+                                printf("Previous token was a redirect and current token contains a wildcard. Invalid.");
+				//return 0;				
+                        }
+
+			
+                        //printf("token is: %s\n", str);
+                        i++;
+                        left = i;
+                        free(str);
+
+                }
 		else
 		{
 			i++;
@@ -183,7 +227,7 @@ void tokenizer(arraylist_t* arr, char* line)
 		
 	}
 
-
+	return 1;
 }
 
 
