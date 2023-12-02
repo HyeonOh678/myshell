@@ -8,25 +8,7 @@
 #include <sys/stat.h>
 #include "arraylist.h"
 #include "tokenizer.h"
-
-#ifndef MYSH_DEBUG
-#define MYSH_DEBUG 1
-#endif
-
-char* readLine (char*);
-
-
-enum mode_type {
-	BATCH,
-	INTERACTIVE,
-	INVALID
-};
-
-// global variables
-enum mode_type mode = INVALID;
-int fd;
-int hit_EOF = 0;
-int prev_return_value;
+#include "mysh.h"
 
 int main (int argc, char **argv) {
 	// initializes shell: sets mode and validates argument for batch mode
@@ -42,7 +24,8 @@ int main (int argc, char **argv) {
 					fd = open(argv[1], O_RDONLY);
 					if (fd > 0) {
 						mode = BATCH;
-						printf("Starting mysh in batch mode\n");
+						if (MYSH_DEBUG)
+							printf("Starting mysh in batch mode\n");
 					} else {
 						fprintf(stderr, "ERROR: Cannot open %s: %s\n", argv[1], strerror(errno));
 					}
@@ -64,6 +47,9 @@ int main (int argc, char **argv) {
 	}
 
 
+
+
+
 	// main input loop
 	do {
 		if (mode == INTERACTIVE) {
@@ -81,18 +67,28 @@ int main (int argc, char **argv) {
 			printf(";%s;\n", input);
 
 		if (strlen(input) != 0) {
+			printf("tokeninzing");
 			arraylist_t* arraylist = al_create(1);
 			tokenizer(arraylist, input);
+			char buf[100];
+			printf("%s\n", getcwd(buf, 90));
 			
 			if (MYSH_DEBUG) {
 				printf("%d\n", al_contains(arraylist, "|"));
 				al_print(arraylist);
 			}
 			
+			if(arraylist->length > 0) {
 			// if exit break
 			// if valid input
 				// figure out what to do with the command
 			// else error and return
+			} else {
+				fprintf(stderr, "ERROR: <= 0 tokens returned, this should not happen\n");
+				free(input);
+				al_destroy(arraylist);
+				return EXIT_FAILURE;
+			}
 
 			al_destroy(arraylist);
 		}

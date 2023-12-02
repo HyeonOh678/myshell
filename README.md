@@ -29,3 +29,5 @@ cd /PATH/
 
 how are you gonna store args, argc, argv[]
     - what kind of remove do you need to implement in arraylist?
+
+- when to implement exit
