@@ -77,22 +77,22 @@ int isWildCard(char* token)
 	return isWildCard;
 }
 
-int isRedirect(char* token)
+int isPipe(char* token)
 {
-	int isRedirect = 0;
+	int isPipe = 0;
         //first check if the token has the wildcard symbol in it *
         int tokenLen = strlen(token);
         for(int i = 0; i < tokenLen; i++)
         {
-                if(token[i] == '<' || token[i] == '>')
+                if(token[i] == '|')
                 {
-                        isRedirect = 1;
+                        isPipe = 1;
                         break;
                 }
 
         }
 
-        return isRedirect;
+        return isPipe;
 
 }
 
@@ -103,6 +103,7 @@ int tokenizer(arraylist_t* arr, char* line)
 	int i = 0;
 	int left = 0;
 	int isPrevTokenRedirect = 0;
+	int isPrevWildCard = 0;
 	int isLineInvalid = 1;
 
 	while(i <= lineSize)
@@ -132,6 +133,7 @@ int tokenizer(arraylist_t* arr, char* line)
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 0) //if the token contains a wildcard but the prev token is not a redirect , expand token
                         {
                                 tokenExpansion(arr, str);
+				isPrevWildCard = 1;
                         }
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
                         {
@@ -161,6 +163,7 @@ int tokenizer(arraylist_t* arr, char* line)
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 0) //if the token contains a wildcard but the prev token is not a redirect , expand token
                         {
                                 tokenExpansion(arr, str);
+				isPrevWildCard = 1;
                         }
 			else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
 			{
@@ -176,6 +179,15 @@ int tokenizer(arraylist_t* arr, char* line)
             	    memcpy(str2, &line[i], size2);
             	    str2[1] = '\0';
 		    isPrevTokenRedirect = 1;
+		    //check if the token before this is a wildcard and if the current token is a pipe
+		    if(isPrevWildCard == 1 && isPipe(str2) == 1)
+		    {
+			isLineInvalid = 0;
+		    }
+		    else if(isPrevWildCard == 1 && isPipe(str2) == 0)
+		    {
+			    isPrevWildCard = 0;
+		    }
             	    al_push(arr,str2);
             	    i++;
             	    left = i;
@@ -188,6 +200,16 @@ int tokenizer(arraylist_t* arr, char* line)
 		    memcpy(str, &line[i], size);
 		    str[1] = '\0';
 		    isPrevTokenRedirect = 1;
+	            //check if the token before this is a wildcard and if the current token is a pipe
+                    if(isPrevWildCard == 1 && isPipe(str) == 1)
+                    {
+                        isLineInvalid = 0;
+                    }
+                    else if(isPrevWildCard == 1 && isPipe(str) == 0)
+                    {
+                            isPrevWildCard = 0;
+                    }
+
 		    al_push(arr,str);
 		    i++;
 		    left = i;
@@ -209,6 +231,7 @@ int tokenizer(arraylist_t* arr, char* line)
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 0) //if the token contains a wildcard but the prev token is not a redirect , expand token
                         {
                                 tokenExpansion(arr, str);
+				isPrevWildCard = 1;
                         }
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
                         {
