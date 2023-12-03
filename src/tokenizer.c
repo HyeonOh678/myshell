@@ -103,6 +103,8 @@ int tokenizer(arraylist_t* arr, char* line)
 	int i = 0;
 	int left = 0;
 	int isPrevTokenRedirect = 0;
+	int isLineInvalid = 1;
+
 	while(i <= lineSize)
 	{
 		if(line[i] == ' ' && line[left] == ' ')
@@ -134,7 +136,8 @@ int tokenizer(arraylist_t* arr, char* line)
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
                         {
                                 fprintf(stderr, "Previous token was a redirect and current token contains a wildcard. Invalid.");
-				//return 0;
+				tokenExpansion(arr, str);
+                                isLineInvalid = 0;
                         }
 
 
@@ -162,7 +165,8 @@ int tokenizer(arraylist_t* arr, char* line)
 			else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
 			{
 				fprintf(stderr, "Previous token was a redirect and current token contains a wildcard. Invalid.\n");
-				//return 0;
+				tokenExpansion(arr, str);
+                                isLineInvalid = 0;
 			}
 
 		    free(str);
@@ -209,7 +213,8 @@ int tokenizer(arraylist_t* arr, char* line)
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
                         {
                                 fprintf(stderr, "Previous token was a redirect and current token contains a wildcard. Invalid.");
-				//return 0;				
+				tokenExpansion(arr, str);
+                                isLineInvalid = 0;			
                         }
 
 			
@@ -227,7 +232,7 @@ int tokenizer(arraylist_t* arr, char* line)
 		
 	}
 
-	return 1;
+	return isLineInvalid;
 }
 
 
