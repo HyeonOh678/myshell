@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 {
 	arraylist_t* arr = al_create(5);
 	
-	char* line[27];
+	char* line[28];
 	line[0] = "cd subdir";
 	line[1] = " echo hello";
 	line[2] = "   cd sub  ";
@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 	line[9] = "foo<bar<baz";
 	line[10] = "src/*";
 	line[11] = "src/tests/*";
-	line[12] = "src/tests/*";
+	line[12] = "./src/tests/*";
 	line[13] = "> *";
 	line[14] = "< *.c";
 	line[15] = "> *.c";
@@ -39,15 +39,16 @@ int main(int argc, char** argv)
 	line[24] = "|text";
 	line[25] = "|text|";
 	line[26] = "text|";
+	line[27] = "../myshell/*";
 
 
 
 
 
 	for (int i = 0; i < sizeof(line)/sizeof(char*); i++) {
-		tokenizer(arr, line[i]);
-		
 		printf("LINE %d\n", i);
+		printf("Return value of tokenizer: %d\n", tokenizer(arr, line[i]));
+
 		al_print(arr);
 		printf("\n\n\n");
 		
