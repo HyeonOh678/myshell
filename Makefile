@@ -11,6 +11,13 @@ arraylist_tester: obj/arraylist_tester.o obj/arraylist.o
 token_tester: obj/token_tester.o obj/arraylist.o obj/tokenizer.o
 	$(CC) $(CFLAGS) obj/token_tester.o obj/arraylist.o obj/tokenizer.o -o token_tester
 
+print_args: obj/print_args.o
+	$(CC) $(CFLAGS) obj/print_args.o -o print_args
+
+reader: obj/reader.o
+	$(CC) $(CFLAGS) obj/reader.o -o reader
+
+
 # object files
 obj/arraylist.o: src/arraylist.c
 	$(CC) $(CFLAGS) src/arraylist.c -c -o arraylist.o
@@ -31,6 +38,14 @@ obj/token_tester.o: src/tests/token_tester.c
 obj/mysh.o: src/mysh.c
 	$(CC) $(CFLAGS) src/mysh.c -c -o mysh.o
 	mv mysh.o obj
+
+obj/print_args.o: src/tests/print_args.c
+	$(CC) $(CFLAGS) src/tests/print_args.c -c -o print_args.o
+	mv print_args.o obj
+
+obj/reader.o: src/tests/reader.c
+	$(CC) $(CFLAGS) src/tests/reader.c -c -o reader.o
+	mv reader.o obj
 
 # misc
 clean:
