@@ -90,6 +90,7 @@ how are you gonna store args, argc, argv[]
 
 when piping where does the shell store input for the dependent process?
 
+
 - check not 2 pipes
 - if pipe, ????
     - check if argument follows
@@ -106,3 +107,15 @@ for one job:
             - THEN
             - ELSE
                 - assemble args list, if >, < check if argument follows
+
+
+how to implement piping and redirection for built-in commands? cd, pwd, which
+    - pwd, which separate processes
+    - cd?
+then and if ????
+do we have to do error redirection?
+
+make pwd and which their own child processes
+figure out wtf to do for cd
+
+how does shell behave if < > or | are the first arg, or >, < are directly after a pipe

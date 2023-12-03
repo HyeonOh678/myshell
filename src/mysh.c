@@ -60,63 +60,114 @@ int main (int argc, char **argv) {
 		char* input = readLine(input);
 		if (input == NULL) {
 			fprintf(stderr, "ERROR: readLine returns null\n");
-			return EXIT_FAILURE;
+			break;
 		}
 
 		if (MYSH_DEBUG)
 			printf(";%s;\n", input);
 
 		if (strlen(input) != 0) {
-			printf("tokeninzing");
 			arraylist_t* arraylist = al_create(1);
 			tokenizer(arraylist, input);
-			char buf[100];
-			printf("%s\n", getcwd(buf, 90));
+			
 			
 			if (MYSH_DEBUG) {
-				printf("%d\n", al_contains(arraylist, "|"));
 				al_print(arraylist);
+				//char buf[100];
+				//printf("%s\n", getcwd(buf, 90));
 			}
 			
+			// if tokenizer doesn't error {
 			if(arraylist->length > 0) {
-			// if exit break
-			// if valid input
-				// figure out what to do with the command
-			// else error and return
+				int pipes = al_contains(arraylist, "|");
+				if (pipes == 0) {
+					int arg_one_is_path = strchr(al_get(arraylist, 0), '/') != NULL;
+					
+					if (MYSH_DEBUG)
+						printf("%d\n", arg_one_is_path);
+
+					if (arg_one_is_path) {
+						if (access(al_get(arraylist, 0), F_OK) == 0) {
+							if(access(al_get(arraylist, 0), X_OK) == 0) {
+								// fork and execv?
+							} else {
+								printf("mysh: %s: Permission denied\n", al_get(arraylist, 0));
+							}
+						} else {
+							printf("mysh: %s: No such file or directory\n", al_get(arraylist, 0));
+						}
+					} else {
+						if (strcmp(al_get(arraylist, 0), "exit") == 0) {
+							printf("mysh: exiting\n");
+							free(input);
+							al_destroy(arraylist);
+							if (mode == BATCH) {
+								if (close(fd) == -1) {
+									fprintf(stderr, "ERROR: Cannot close %s: %s\n", argv[1], strerror(errno));
+									return EXIT_FAILURE;
+								}
+							}
+							return EXIT_SUCCESS;
+						} else if (strcmp(al_get(arraylist, 0), "pwd") == 0) {
+							char* wd = getcwd(NULL, 256);
+							if (wd != NULL) {
+								printf("%s\n", wd);
+								free(wd);
+							} else {
+								fprintf(stderr, "ERROR: getcwd: %s\n", strerror(errno));
+								break;
+							}
+						// 	 else i
+						// } else if ( which ) {
+
+						// } else if ( < > | ) {
+
+						// } else {
+							
+						}
+					}
+				} else if (pipes == 1) {
+					arraylist_t* left = al_create(1);
+					
+					// modularize pipes == 0
+				} else if (pipes > 1) {
+					printf("mysh: mysh does not accept more than one pipe\n");
+				}
 			} else {
 				fprintf(stderr, "ERROR: <= 0 tokens returned, this should not happen\n");
 				free(input);
 				al_destroy(arraylist);
-				return EXIT_FAILURE;
+				break;
 			}
+			// } else { }
 
 			al_destroy(arraylist);
 		}
 
 		free(input);
 		if (hit_EOF) {
-			break;
+			if (mode == BATCH) {
+				if (close(fd) == -1) {
+					fprintf(stderr, "ERROR: Cannot close %s: %s\n", argv[1], strerror(errno));
+					return EXIT_FAILURE;
+				}
+			}
+			return EXIT_SUCCESS;
 		}
 	} while (1);
 	
 	if (mode == BATCH) {
 		if (close(fd) == -1) {
 			fprintf(stderr, "ERROR: Cannot close %s: %s\n", argv[1], strerror(errno));
-			return EXIT_FAILURE;
 		}
 	}
-
-	return EXIT_SUCCESS;
+	return EXIT_FAILURE;
 }
 
 char* readLine (char* buffer) {
 	buffer = malloc(4);
 	int len = 0, capacity = 4;
 	char* i = buffer;
-
-	if (mode == BATCH) {
-
-	}
 
 	while (len == 0 || *(i - 1) != '\n') {
 		if (len > capacity - 1) {
@@ -129,6 +180,7 @@ char* readLine (char* buffer) {
 
 		if (bytes_read == -1) {
 			fprintf(stderr, "ERROR: Cannot read from file: %s\n", strerror(errno));
+			free(buffer);
 			return NULL;
 		} else if (bytes_read == 0) {
 			hit_EOF = 1;
@@ -146,5 +198,6 @@ char* readLine (char* buffer) {
 	}
 
 	fprintf(stderr, "ERROR: This loop isn't supposed to terminate\n");
+	free(buffer);
 	return NULL;
 }
