@@ -137,7 +137,7 @@ int tokenizer(arraylist_t* arr, char* line)
                         }
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
                         {
-                                fprintf(stderr, "mysh: Invalid job: Cannot have wildcard after redirection\n");
+                                fprintf(stderr, "mysh: Invalid job: Cannot have wildcard after redirection or pipe.\n");
 				tokenExpansion(arr, str);
                                 isLineInvalid = 0;
                         }
@@ -167,7 +167,7 @@ int tokenizer(arraylist_t* arr, char* line)
                         }
 			else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
 			{
-				fprintf(stderr, "mysh: Invalid job: Cannot have wildcard after redirection\n");
+				fprintf(stderr, "mysh: Invalid job: Cannot have wildcard after redirection or pipe.\n");
 				printf("%s\n", str);
 				tokenExpansion(arr, str);
                                 isLineInvalid = 0;
@@ -238,7 +238,7 @@ int tokenizer(arraylist_t* arr, char* line)
                         }
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
                         {
-                                fprintf(stderr, "mysh: Invalid job: Cannot have wildcard after redirection\n");
+                                fprintf(stderr, "mysh: Invalid job: Cannot have wildcard after redirection or pipe.\n");
 				tokenExpansion(arr, str);
                                 isLineInvalid = 0;			
                         }
