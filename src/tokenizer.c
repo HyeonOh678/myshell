@@ -137,7 +137,7 @@ int tokenizer(arraylist_t* arr, char* line)
                         }
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
                         {
-                                fprintf(stderr, "Previous token was a redirect and current token contains a wildcard. Invalid.");
+                                fprintf(stderr, "mysh: Invalid job: Cannot have wildcard after redirection\n");
 				tokenExpansion(arr, str);
                                 isLineInvalid = 0;
                         }
@@ -167,7 +167,8 @@ int tokenizer(arraylist_t* arr, char* line)
                         }
 			else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
 			{
-				fprintf(stderr, "Previous token was a redirect and current token contains a wildcard. Invalid.\n");
+				fprintf(stderr, "mysh: Invalid job: Cannot have wildcard after redirection\n");
+				printf("%s\n", str);
 				tokenExpansion(arr, str);
                                 isLineInvalid = 0;
 			}
@@ -182,7 +183,8 @@ int tokenizer(arraylist_t* arr, char* line)
 		    //check if the token before this is a wildcard and if the current token is a pipe
 		    if(isPrevWildCard == 1 && isPipe(str2) == 1)
 		    {
-			isLineInvalid = 0;
+				fprintf(stderr, "mysh: Invalid job: Cannot have pipe after wildcard\n");
+				isLineInvalid = 0;
 		    }
 		    else if(isPrevWildCard == 1 && isPipe(str2) == 0)
 		    {
@@ -203,6 +205,7 @@ int tokenizer(arraylist_t* arr, char* line)
 	            //check if the token before this is a wildcard and if the current token is a pipe
                     if(isPrevWildCard == 1 && isPipe(str) == 1)
                     {
+						fprintf(stderr, "mysh: Invalid job: Cannot have pipe after wildcard\n");
                         isLineInvalid = 0;
                     }
                     else if(isPrevWildCard == 1 && isPipe(str) == 0)
@@ -235,7 +238,7 @@ int tokenizer(arraylist_t* arr, char* line)
                         }
                         else if(isWildCard(str) == 1 && isPrevTokenRedirect == 1) //if the token contains a wildcard and prev token is redirect, abort or send null
                         {
-                                fprintf(stderr, "Previous token was a redirect and current token contains a wildcard. Invalid.");
+                                fprintf(stderr, "mysh: Invalid job: Cannot have wildcard after redirection\n");
 				tokenExpansion(arr, str);
                                 isLineInvalid = 0;			
                         }
