@@ -15,7 +15,7 @@ char* al_get(arraylist_t*, unsigned);
 void al_print(arraylist_t*);
 int al_contains(arraylist_t*, char*);
 int al_push(arraylist_t *, char*);
-
+int al_remove(arraylist_t*, int);
 
 // int al_pop(arraylist_t *, char*);
 

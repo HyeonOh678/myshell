@@ -17,8 +17,12 @@ int main(int argc, char** argv) {
         al_print(my_al);
 
         // tests if remove works, remove a random element at a time
-        if (i == 1) {
-            //al_remove()
+        int len = my_al->length;
+        for (int i = 0; i < len; i++) {
+            int r = rand() % my_al->length;
+            printf("%d\n", r);
+            al_remove(my_al, r);
+            al_print(my_al);
         }
 
         // deconstructing

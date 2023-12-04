@@ -100,14 +100,24 @@ int al_contains(arraylist_t* L, char* str) {
 // remove item from end of list
 // write item to dest (if dest is non-NULL)
 // return 1 on success, 0 on failure (i.e., list is empty)
-int al_remove(arraylist_t *L, char* dest)
+int al_remove(arraylist_t *L, int index)
 {
     if (L->length == 0)
         return 0;
+    if (index >= L->length || index < 0) {
+        return 0;
+    }
 
-    // L->length--;
-    // if (dest) *dest = L->data[L->length];
-    // if (DEBUG) printf("Removed %d; new length %d\n", L->data[L->length], L->length);
+    free(al_get(L, index));
+
+    for (int i = index + 1; i < L->length; i++) {
+        L->head[i - 1] = L->head[i]; 
+    }
+    
+    L->length--;
+    
+    if (ARRL_DEBUG)
+        printf("Removed %d; new length %d\n", index, L->length);
 
     return 1;
 }
