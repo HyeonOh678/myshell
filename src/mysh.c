@@ -210,18 +210,24 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 			printf("%d\n", arg_one_is_path);
 
 		if (arg_one_is_path) {
+			int fileExists = 0, perms = 0;
 			if (access(job.name, F_OK) == 0) {
+				fileExists = 1;
 				if(access(job.name, X_OK) == 0) {
-					// run command
-					// fork and execv?
-				} else {
-					printf("mysh: %s: Permission denied\n", job.name);
+					perms = 1;
 				}
-			} else {
-				printf("mysh: %s: No such file or directory\n", job.name);
+			}
+
+			if (!fileExists) {
+				if (!perms) {
+					printf("mysh: %s: Permission denied\n", job.name);
+				} else {
+					printf("mysh: %s: No such file or directory\n", job.name);
+				}
 			}
 		} else {
 			if (strcmp(job.name, "exit") == 0) {
+				clear_job(&job);
 				exit_mysh();
 				return EXIT_SUCCESS;
 			} else if (strcmp(job.name, "pwd") == 0) {
@@ -244,14 +250,13 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 				int which = 0;
 				if (strcmp(job.name, "which") == 0) {
 					which = 1;
-					if (job.arguments->length != 1 || strcmp(al_get(job.arguments, 0), "cd") == 0 || strcmp(al_get(job.arguments, 0), "pwd") == 0 || strcmp(al_get(job.arguments, 0), "which") == 0) {
+					if (job.arguments->length != 2 || strcmp(al_get(job.arguments, 1), "cd") == 0 || strcmp(al_get(job.arguments, 1), "pwd") == 0 || strcmp(al_get(job.arguments, 1), "which") == 0) {
 						clear_job(&job);
 						return EXIT_FAILURE;
 					} else {
 						free(job.name);
 						job.name = malloc(strlen(al_get(job.arguments, 0)) + 1);
 						strcpy(job.name, al_get(job.arguments, 0));
-						al_remove(job.arguments, 0);
 					}
 				}
 				const char* dirs[3];
@@ -282,30 +287,44 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 							if (pid == 0) {
 								if (job.path_std_in != NULL) {
 									if (access(job.path_std_in, R_OK) == 0) {
-
+										int std_in = open(job.path_std_in, O_RDONLY);
+										dup2(std_in, STDIN_FILENO);
 									} else {
-
+										fprintf(stderr, "mysh: %s: %s\n", job.path_std_in, strerror(errno));
 										free(path);
 										clear_job(&job);
-										exit(EXIT_SUCCESS);
+										exit(EXIT_FAILURE);
 									}
 								}
 								if (job.path_std_out != NULL) {
-
+									if (access(job.path_std_out, W_OK) == 0) {
+										int std_out = open(job.path_std_out, O_WRONLY | O_TRUNC);
+										dup2(std_out, STDOUT_FILENO);
+									} else {
+										int std_out = open(job.path_std_out, O_CREAT);
+										dup2(std_out, STDOUT_FILENO);
+									}
 								}
-								// if (job.path_std_in != NULL) {
-								// 	int fd = open(job.path_std_in,)
-								// }
-								// dup2
 
 								if (which) {
 									printf("%s\n", path);
 									free(path);
 									clear_job(&job);
+									// if (job.path_std_in)
+									// close(std_in);
 									exit(EXIT_SUCCESS);
 								} else {
-									// exec
-									exit(EXIT_SUCCESS);
+									al_push(job.arguments, "");
+									job.arguments->head[job.arguments->length - 1] = '\0';
+									
+									if (MYSH_DEBUG) {
+										al_print(job.arguments);
+									}
+
+									int exec_rv = execv(path, job.arguments->head);
+									if (exec_rv != 0) {
+										printf("ERROR: %s\n", strerror(errno));
+									}
 								}
 							} else {
 								wait(&child_exit_status);
@@ -438,7 +457,6 @@ int parse_args (arraylist_t* tokens, job_info* job) {
 	for (int i = 0; i < tokens->length; i++) {
 		job->name = malloc(strlen(al_get(tokens, i)) + 1);
 		strcpy(job->name, al_get(tokens, i));
-		al_remove(tokens, i);
 		break;
 	}
 

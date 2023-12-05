@@ -142,3 +142,5 @@ test if conditional is true
 check if then after pipe invalid
 check if anything after <>
 check if args before and after |
+
+pipe output for builtins
