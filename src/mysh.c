@@ -204,48 +204,132 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 	}
 
 	if (rv == EXIT_SUCCESS) {
-		// int arg_one_is_path = strchr(al_get(arraylist, 0), '/') != NULL;
+		int arg_one_is_path = strchr(job.name, '/') != NULL;
 
-		// if (MYSH_DEBUG)
-		// 	printf("%d\n", arg_one_is_path);
+		if (MYSH_DEBUG)
+			printf("%d\n", arg_one_is_path);
 
-		// if (arg_one_is_path) {
-		// 	if (access(al_get(arraylist, 0), F_OK) == 0) {
-		// 		if(access(al_get(arraylist, 0), X_OK) == 0) {
-		// 			// fork and execv?
-		// 		} else {
-		// 			printf("mysh: %s: Permission denied\n", al_get(arraylist, 0));
-		// 		}
-		// 	} else {
-		// 		printf("mysh: %s: No such file or directory\n", al_get(arraylist, 0));
-		// 	}
-		// } else {
-		// 	if (strcmp(al_get(arraylist, 0), "exit") == 0) {
-		// 		exit_mysh();
-		// 		return EXIT_SUCCESS;
-		// 	} else if (strcmp(al_get(arraylist, 0), "pwd") == 0) {
-		// 		int id = 1;
-		// 		id = fork();
-		// 		if (id == 0) {
-		// 			char* wd = getcwd(NULL, 256);
-		// 			if (wd != NULL) {
-		// 				printf("%s\n", wd);
-		// 				free(wd);
-		// 			} else {
-		// 				fprintf(stderr, "ERROR: getcwd: %s\n", strerror(errno));
-		// 				return -1;
-		// 			}
-		// 		}
-		// 		wait(&prev_return_value);
-		// 	}
-		// 	// 	 else if then
-		// 	//	else if else
-		// 	// } else if ( which ) {
+		if (arg_one_is_path) {
+			if (access(job.name, F_OK) == 0) {
+				if(access(job.name, X_OK) == 0) {
+					// run command
+					// fork and execv?
+				} else {
+					printf("mysh: %s: Permission denied\n", job.name);
+				}
+			} else {
+				printf("mysh: %s: No such file or directory\n", job.name);
+			}
+		} else {
+			if (strcmp(job.name, "exit") == 0) {
+				exit_mysh();
+				return EXIT_SUCCESS;
+			} else if (strcmp(job.name, "pwd") == 0) {
+				int id = 1;
+				id = fork();
+				if (id == 0) {
+					char* wd = getcwd(NULL, 256);
+					if (wd != NULL) {
+						printf("%s\n", wd);
+						free(wd);
+					} else {
+						fprintf(stderr, "ERROR: getcwd: %s\n", strerror(errno));
+						return -1;
+					}
+				}
+				wait(&prev_return_value);
+			} else if (strcmp(job.name, "cd") == 0) {
 
-		// 	// } else if ( < > | ) {
+			} else {
+				int which = 0;
+				if (strcmp(job.name, "which") == 0) {
+					which = 1;
+					if (job.arguments->length != 1 || strcmp(al_get(job.arguments, 0), "cd") == 0 || strcmp(al_get(job.arguments, 0), "pwd") == 0 || strcmp(al_get(job.arguments, 0), "which") == 0) {
+						clear_job(&job);
+						return EXIT_FAILURE;
+					} else {
+						free(job.name);
+						job.name = malloc(strlen(al_get(job.arguments, 0)) + 1);
+						strcpy(job.name, al_get(job.arguments, 0));
+						al_remove(job.arguments, 0);
+					}
+				}
+				const char* dirs[3];
+				dirs[0] = "/usr/local/bin/";
+				dirs[1] = "/usr/bin/";
+				dirs[2] = "/bin/";
 
-		// 	// } else {
-		return EXIT_SUCCESS;			
+				int fileExists = 0, perms = 0;
+
+				for (int i = 0; i < 3; i++) {
+					char* path = malloc(strlen(job.name) + 20);
+					strcpy(path, dirs[i]);
+					strcat(path, job.name);
+
+					if (MYSH_DEBUG) {
+						printf(";%s;\n", path);
+					}
+
+					if (access(path, F_OK) == 0) {
+						fileExists = 1;
+						if(access(path, X_OK) == 0) {
+							if (MYSH_DEBUG) {
+								//printf("%s\n", dirs[i]);
+							}
+
+							pid = fork();
+							int child_exit_status;
+							if (pid == 0) {
+								if (job.path_std_in != NULL) {
+									if (access(job.path_std_in, R_OK) == 0) {
+
+									} else {
+
+										free(path);
+										clear_job(&job);
+										exit(EXIT_SUCCESS);
+									}
+								}
+								if (job.path_std_out != NULL) {
+
+								}
+								// if (job.path_std_in != NULL) {
+								// 	int fd = open(job.path_std_in,)
+								// }
+								// dup2
+
+								if (which) {
+									printf("%s\n", path);
+									free(path);
+									clear_job(&job);
+									exit(EXIT_SUCCESS);
+								} else {
+									// exec
+									exit(EXIT_SUCCESS);
+								}
+							} else {
+								wait(&child_exit_status);
+							}
+
+							free(path);
+							clear_job(&job);	
+							return child_exit_status;
+						}
+					}
+					free(path);
+				}
+
+				if (!fileExists && which == 0) {
+					if (!perms) {
+						printf("mysh: %s: No such file or directory\n", job.name);
+					} else {
+					printf("mysh: %s: Permission denied\n", job.name);
+					}
+				}
+				clear_job(&job);
+				return EXIT_FAILURE;
+			}
+		}			
 	} else {
 		return EXIT_FAILURE;
 	}
@@ -350,7 +434,7 @@ int parse_args (arraylist_t* tokens, job_info* job) {
 		}
 	}
 
-	// find process arg
+	// find job name
 	for (int i = 0; i < tokens->length; i++) {
 		job->name = malloc(strlen(al_get(tokens, i)) + 1);
 		strcpy(job->name, al_get(tokens, i));
@@ -364,4 +448,16 @@ int parse_args (arraylist_t* tokens, job_info* job) {
 void exit_mysh() {
 	printf("mysh: exiting\n");
 	exit_shell = 1;
+}
+
+void clear_job(job_info* job) {
+	if (job->name != NULL){
+		free(job->name);
+	}
+	if (job->path_std_in != NULL) {
+		free(job->path_std_in);
+	}
+	if(job->path_std_out != NULL) {
+		free(job->path_std_out);
+	}
 }
