@@ -306,16 +306,7 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 						pid = fork();
 						int child_exit_status;
 						if (pid == 0) {
-							if (job.path_std_in != NULL) {
-								if (access(job.path_std_in, R_OK) == 0) {
-									int std_in = open(job.path_std_in, O_RDONLY);
-									dup2(std_in, STDIN_FILENO);
-								} else {
-									fprintf(stderr, "mysh: %s: %s\n", job.path_std_in, strerror(errno));
-									free(path);
-									exit(EXIT_FAILURE);
-								}
-							}
+							set_std_in(&job);
 							set_std_out(&job);
 
 							if (which) {
