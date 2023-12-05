@@ -30,7 +30,7 @@ int is_dir (char*);
 char* readLine (char*);
 
 int check_conditionals (arraylist_t*);
-int create_run_job(arraylist_t*, char*, char*);
+int create_run_job(arraylist_t*, int, int);
 int parse_args (arraylist_t*, job_info*);
 
 int set_std_in(job_info*);
