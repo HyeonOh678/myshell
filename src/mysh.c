@@ -24,7 +24,9 @@ int main (int argc, char **argv) {
 		}
 		char* input = readLine(input);
 		if (input == NULL) {
-			fprintf(stderr, "ERROR: readLine returns null\n");
+			if (MYSH_DEBUG && exit_shell != 1) {
+				fprintf(stderr, "ERROR: readLine returns null\n");
+			}
 			break;
 		}
 
@@ -92,7 +94,6 @@ int main (int argc, char **argv) {
 							int pipe_fd[2] = {0, 0};
 							if (pipe(pipe_fd) == 0) {
 								create_run_job(left, -1, pipe_fd[1]);
-								
 								create_run_job(right, pipe_fd[0], -1);
 							} else {
 								fprintf(stderr, "Error occurred when creating pipe\n");
@@ -151,6 +152,10 @@ char* readLine (char* buffer) {
 			return NULL;
 		} else if (bytes_read == 0) {
 			exit_shell = 1;
+			if (len == 0) {
+				free(buffer);
+				return NULL;
+			}
 			*i = '\0';
 			return buffer;
 		} else if (*i == '\n') {
@@ -195,35 +200,49 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 	}
 
 	if (parse_args_rv == EXIT_SUCCESS) {
-		if (strchr(job.name, '/') != NULL) {
+		if (job.name == NULL) {
+			pid = fork();
+			if (pid == 0) {
+				set_std_in(&job);
+				set_std_out(&job);
+				exit(EXIT_SUCCESS);
+			} else {
+				wait(&prev_return_value);
+				clear_job(&job);	
+				return EXIT_SUCCESS;
+			}
+		} else if (strchr(job.name, '/') != NULL) {
 			int fileExists = 0, perms = 0;
 			if (access(job.name, F_OK) == 0) {
 				fileExists = 1;
 				if(access(job.name, X_OK) == 0) {
 					pid = fork();
-					int child_exit_status;
 					if (pid == 0) {
 						set_std_in(&job);
 						set_std_out(&job);
 
 						al_push(job.arguments, "");
+						void* temp = job.arguments->head[job.arguments->length - 1];
 						job.arguments->head[job.arguments->length - 1] = '\0';
 						
+
 						if (MYSH_DEBUG) {
 							al_print(job.arguments);
 						}
 
 						int exec_rv = execv(job.name, job.arguments->head);
 						if (exec_rv != 0) {
+							free(temp);
 							printf("ERROR: %s\n", strerror(errno));
+							exit(errno);
 						}
 						
 					} else {
-						wait(&child_exit_status);
+						wait(&prev_return_value);
 					}
 
 					clear_job(&job);	
-					return child_exit_status;
+					return EXIT_FAILURE;
 				}
 			}
 
@@ -318,6 +337,7 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 								exit(EXIT_SUCCESS);
 							} else {
 								al_push(job.arguments, "");
+								void* temp = job.arguments->head[job.arguments->length - 1];
 								job.arguments->head[job.arguments->length - 1] = '\0';
 								
 								if (MYSH_DEBUG) {
@@ -327,6 +347,8 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 								int exec_rv = execv(path, job.arguments->head);
 								if (exec_rv != 0) {
 									printf("ERROR: %s\n", strerror(errno));
+									free(temp);
+									exit(errno);
 								}
 							}
 						} else {
