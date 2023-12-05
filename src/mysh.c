@@ -81,18 +81,22 @@ int main (int argc, char **argv) {
 									al_push(right, al_get(arraylist, i));
 									al_remove(left, i);
 									i--;
-								}
-								
-								if (MYSH_DEBUG) {
-									al_print(left);
-									al_print(right);
-								}
+								}								
+							}
+
+							if (MYSH_DEBUG) {
+								al_print(left);
+								al_print(right);
 							}
 
 							int pipe_fd[2] = {0, 0};
-							pipe(pipe_fd);
-							create_run_job(left, -1, pipe_fd[1]);
-							create_run_job(right, pipe_fd[0], -1);
+							if (pipe(pipe_fd) == 0) {
+								create_run_job(left, -1, pipe_fd[1]);
+								
+								create_run_job(right, pipe_fd[0], -1);
+							} else {
+								fprintf(stderr, "Error occurred when creating pipe\n");
+							}
 
 							al_destroy(right);
 						} else if (pipes > 1) {
@@ -154,7 +158,6 @@ char* readLine (char* buffer) {
 				i--;
 			} else {
 				*i = '\0';
-				printf(":%s:", buffer);
 				return buffer;
 			}
 		} else {
@@ -175,13 +178,14 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 	job.arguments = tokens;
 	job.path_std_in = NULL;
 	job.path_std_out = NULL;
-	
+	job.pipe_std_in = -1;
+	job.pipe_std_out = -1;
+
 	if (pipe_input_fd != -1) {
-
+		job.pipe_std_in = pipe_input_fd;
 	}
-	
 	if (pipe_output_fd != -1) {
-
+		job.pipe_std_out = pipe_output_fd;
 	}
 
 	int parse_args_rv = parse_args(tokens, &job);
@@ -199,15 +203,7 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 					pid = fork();
 					int child_exit_status;
 					if (pid == 0) {
-						if (job.path_std_in != NULL) {
-							if (access(job.path_std_in, R_OK) == 0) {
-								int std_in = open(job.path_std_in, O_RDONLY);
-								dup2(std_in, STDIN_FILENO);
-							} else {
-								fprintf(stderr, "mysh: %s: %s\n", job.path_std_in, strerror(errno));
-								exit(EXIT_FAILURE);
-							}
-						}
+						set_std_in(&job);
 						set_std_out(&job);
 
 						al_push(job.arguments, "");
@@ -508,8 +504,8 @@ void print_job(job_info* job) {
 	fprintf(stderr, "NAME: %s\n", null_wrapper(job->name));
 	fprintf(stderr, "STDIN: %s\n", null_wrapper(job->path_std_in));
 	fprintf(stderr, "STDOUT: %s\n", null_wrapper(job->path_std_out));
-	// fprintf(stderr, "WRITES_TO_PIPE: %d\n", job->writes_to_pipe);
-	// fprintf(stderr, "READS FROM PIPE: %d\n", job->reads_from_pipe);
+	fprintf(stderr, "PIPE_STD_IN: %d\n", job->pipe_std_in);
+	fprintf(stderr, "PIPE_STD_OUT: %d\n", job->pipe_std_out);
 	fprintf(stderr, "ARGS:\n");
 	al_print(job->arguments);
 	fprintf(stderr, "===========\n");
@@ -533,6 +529,9 @@ int set_std_in (job_info* job) {
 			fprintf(stderr, "mysh: %s: %s\n", job->path_std_in, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
+	} else {
+		dup2(job->pipe_std_in, STDIN_FILENO);
+		return EXIT_SUCCESS;
 	}
 	return EXIT_SUCCESS;
 }
@@ -547,6 +546,9 @@ int set_std_out (job_info* job) {
 			chmod(job->path_std_out, S_IRUSR|S_IWUSR|S_IRGRP);
 			dup2(std_out, STDOUT_FILENO);
 		}
+	} else {
+		dup2(job->pipe_std_out, STDOUT_FILENO);
+		return EXIT_SUCCESS;
 	}
 	return EXIT_SUCCESS;
 }

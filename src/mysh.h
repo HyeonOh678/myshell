@@ -15,6 +15,8 @@ typedef struct _job_info {
 	char* path_std_in;
 	char* path_std_out;
 	arraylist_t* arguments;
+	int pipe_std_in;
+	int pipe_std_out;
 } job_info;
 
 // global variables
