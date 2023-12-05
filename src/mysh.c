@@ -34,7 +34,7 @@ int main (int argc, char **argv) {
 
 		if (strlen(input) != 0) {
 			arraylist_t* arraylist = al_create(1);
-			int rv = tokenizer(arraylist, input) != 0;
+			int tokenizer_rv = tokenizer(arraylist, input) != 0;
 			free(input);
 
 			if (MYSH_DEBUG) {
@@ -43,22 +43,38 @@ int main (int argc, char **argv) {
 				//printf("%s\n", getcwd(buf, 90));
 			}
 			
-			if (rv != 0) {				
+			if (tokenizer_rv != 0) {				
 				if(arraylist->length > 0) {
-					rv = check_conditionals(arraylist);
+					int check_conditionals_rv = check_conditionals(arraylist);
 
-					if (rv == EXIT_SUCCESS) {
+					if (check_conditionals_rv == EXIT_SUCCESS) {
 						int pipes = al_contains(arraylist, "|");
 						if (pipes == 0) {
-							create_run_job(arraylist, NULL, NULL);
+							if (create_run_job(arraylist, NULL, NULL) == EXIT_SUCCESS) {
+								prev_return_value = EXIT_SUCCESS;
+							} else {
+								prev_return_value = EXIT_FAILURE;
+							}
 						} else if (pipes == 1) {
 							arraylist_t* left = arraylist;
 							arraylist_t* right = al_create(1);
 							int found_pipe = 0;
+
 							for (int i = 0; i < arraylist->length; i++) {
 								char* curr = al_get(arraylist, i);
 								if (strcmp(curr, "|") == 0) {
 									found_pipe = 1;
+
+									if (i == 0 || strcmp(al_get(arraylist, i - 1), "<") == 0 || strcmp(al_get(arraylist, i - 1), ">") == 0) {
+										fprintf(stderr, "mysh: syntax error\n");
+										prev_return_value = EXIT_FAILURE;
+										break;
+									} else if (i == arraylist->length - 1 || strcmp(al_get(arraylist, i + 1), "then") == 0 || strcmp(al_get(arraylist, i + 1), "else") == 0) {
+										fprintf(stderr, "mysh: syntax error\n");
+										prev_return_value = EXIT_FAILURE;
+										break;
+									}
+
 									al_remove(left, i);
 									i--;
 								} else if (found_pipe == 1) {
@@ -79,12 +95,16 @@ int main (int argc, char **argv) {
 						} else if (pipes > 1) {
 							printf("mysh: mysh does not accept more than one pipe\n");
 						}
+					} else {
+						prev_return_value = EXIT_FAILURE;
 					}
 				} else {
 					fprintf(stderr, "ERROR: <= 0 tokens returned\n");
 					al_destroy(arraylist);
 					break;
 				}
+			} else {
+				prev_return_value = EXIT_FAILURE;
 			}
 			al_destroy(arraylist);
 		}
@@ -167,66 +187,66 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 	if (MYSH_DEBUG) {
 		printf("---JOB---\n");
 		if (job.name != NULL)
-			printf("%s\n", job.name);
+			printf("NAME: %s\n", job.name);
 		else
-			printf("NULL\n");
+			printf("NAME: NULL\n");
 		if (job.path_std_in != NULL)
-			printf("%s\n", job.path_std_in);
+			printf("STDIN: %s\n", job.path_std_in);
 		else
-			printf("NULL\n");
+			printf("STDIN: NULL\n");
 		if (job.path_std_out != NULL)
-			printf("%s\n", job.path_std_out);
+			printf("STDOUT: %s\n", job.path_std_out);
 		else
-			printf("NULL\n");
+			printf("STDOUT: \n");
+		printf("ARGS: \n");
 		al_print(job.arguments);
 		printf("---------\n");
 	}
 
 	if (rv == EXIT_SUCCESS) {
-		int arg_one_is_path = strchr(al_get(arraylist, 0), '/') != NULL;
+		// int arg_one_is_path = strchr(al_get(arraylist, 0), '/') != NULL;
 
-		if (MYSH_DEBUG)
-			printf("%d\n", arg_one_is_path);
+		// if (MYSH_DEBUG)
+		// 	printf("%d\n", arg_one_is_path);
 
-		if (arg_one_is_path) {
-			if (access(al_get(arraylist, 0), F_OK) == 0) {
-				if(access(al_get(arraylist, 0), X_OK) == 0) {
-					// fork and execv?
-				} else {
-					printf("mysh: %s: Permission denied\n", al_get(arraylist, 0));
-				}
-			} else {
-				printf("mysh: %s: No such file or directory\n", al_get(arraylist, 0));
-			}
-		} else {
-			if (strcmp(al_get(arraylist, 0), "exit") == 0) {
-				exit_mysh();
-				return EXIT_SUCCESS;
-			} else if (strcmp(al_get(arraylist, 0), "pwd") == 0) {
-				int id = 1;
-				id = fork();
-				if (id == 0) {
-					char* wd = getcwd(NULL, 256);
-					if (wd != NULL) {
-						printf("%s\n", wd);
-						free(wd);
-					} else {
-						fprintf(stderr, "ERROR: getcwd: %s\n", strerror(errno));
-						return -1;
-					}
-				}
-				wait(&prev_return_value);
-			}
-			// 	 else if then
-			//	else if else
-			// } else if ( which ) {
+		// if (arg_one_is_path) {
+		// 	if (access(al_get(arraylist, 0), F_OK) == 0) {
+		// 		if(access(al_get(arraylist, 0), X_OK) == 0) {
+		// 			// fork and execv?
+		// 		} else {
+		// 			printf("mysh: %s: Permission denied\n", al_get(arraylist, 0));
+		// 		}
+		// 	} else {
+		// 		printf("mysh: %s: No such file or directory\n", al_get(arraylist, 0));
+		// 	}
+		// } else {
+		// 	if (strcmp(al_get(arraylist, 0), "exit") == 0) {
+		// 		exit_mysh();
+		// 		return EXIT_SUCCESS;
+		// 	} else if (strcmp(al_get(arraylist, 0), "pwd") == 0) {
+		// 		int id = 1;
+		// 		id = fork();
+		// 		if (id == 0) {
+		// 			char* wd = getcwd(NULL, 256);
+		// 			if (wd != NULL) {
+		// 				printf("%s\n", wd);
+		// 				free(wd);
+		// 			} else {
+		// 				fprintf(stderr, "ERROR: getcwd: %s\n", strerror(errno));
+		// 				return -1;
+		// 			}
+		// 		}
+		// 		wait(&prev_return_value);
+		// 	}
+		// 	// 	 else if then
+		// 	//	else if else
+		// 	// } else if ( which ) {
 
-			// } else if ( < > | ) {
+		// 	// } else if ( < > | ) {
 
-			// } else {
-				
-			
-		}		} else {
+		// 	// } else {
+		return EXIT_SUCCESS;			
+	} else {
 		return EXIT_FAILURE;
 	}
 }
@@ -285,15 +305,60 @@ int check_conditionals (arraylist_t* arraylist) {
 	
 	if (prev_return_value == -1) {
 		fprintf(stderr, "mysh: cannot run conditional job when there is no previous state\n");
-		prev_return_value = 1;
 	}
 	return EXIT_FAILURE;
 }
 
 int parse_args (arraylist_t* tokens, job_info* job) {
-	for (int i = 0; i < tokens->length; i++) {
-		
+	if (tokens->length < 1) {
+		fprintf(stderr, "mysh: syntax error\n");
+		return EXIT_FAILURE;
 	}
+
+	// process redirects
+	for (int i = 0; i < tokens->length; i++) {
+		if (strcmp(al_get(tokens, i), ">") == 0) {
+			if (i < tokens->length - 1) {
+				if (job->path_std_out != NULL) {
+					free(job->path_std_out);
+					job ->path_std_out = NULL;
+				}
+				job->path_std_out = malloc(strlen(al_get(tokens, i + 1)) + 1);
+				strcpy(job->path_std_out, al_get(tokens, i + 1));
+				al_remove(tokens, i);
+				al_remove(tokens, i);
+				i -= 1;
+			} else {
+				fprintf(stderr, "mysh: syntax error\n");
+				return EXIT_FAILURE;
+			}
+		} else if (strcmp(al_get(tokens, i), "<") == 0) {
+			if (i < tokens->length - 1) {
+				if (job->path_std_in != NULL) {
+					free(job->path_std_in);
+					job ->path_std_in = NULL;
+				}
+				job->path_std_in = malloc(strlen(al_get(tokens, i + 1)) + 1);
+				strcpy(job->path_std_in, al_get(tokens, i + 1));
+				al_remove(tokens, i);
+				al_remove(tokens, i);
+				i -= 1;
+			} else {
+				fprintf(stderr, "mysh: syntax error\n");
+				return EXIT_FAILURE;
+			}
+		}
+	}
+
+	// find process arg
+	for (int i = 0; i < tokens->length; i++) {
+		job->name = malloc(strlen(al_get(tokens, i)) + 1);
+		strcpy(job->name, al_get(tokens, i));
+		al_remove(tokens, i);
+		break;
+	}
+
+	return EXIT_SUCCESS;
 }
 
 void exit_mysh() {

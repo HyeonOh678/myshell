@@ -35,6 +35,8 @@ For all our design decisions we referenced the behavior of bash on the ilabs.
 When defining the behavior of conditional statements that would run after checking the return value of the previous job, we decided:
 - At the very beginning, the state would be neither true nor false because no previous job was run. At least one job needs to be executed after starting mysh to use then foo or else foo
 - The state of the previous job would be set to EXIT_FAILURE (1) when the user passes invalid arguments to mysh. The next job would not run if preceded by then, but would run if preceded by else
+    - Ex: User enters then after a pipe
+    - Ex: User enters wildcards after input or output redirection
 - If a conditional statement fails to execute, the exit status of the previous command will not be updated and will be the same as the previous previous command. This will continue until a job is successfully run
 
 #### Conflicts between piping and redirection
