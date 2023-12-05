@@ -29,7 +29,7 @@ int main (int argc, char **argv) {
 		}
 
 		if (MYSH_DEBUG) {
-			//printf(";%s;\n", input);
+			printf(";%s;\n", input);
 		}
 
 		if (strlen(input) != 0) {
@@ -141,7 +141,6 @@ char* readLine (char* buffer) {
 		}
 		int bytes_read = read(fd, i, 1);
 		
-
 		if (bytes_read == -1) {
 			fprintf(stderr, "ERROR: Cannot read from file: %s\n", strerror(errno));
 			free(buffer);
@@ -150,14 +149,17 @@ char* readLine (char* buffer) {
 			exit_shell = 1;
 			*i = '\0';
 			return buffer;
-		} else {
-			if (*i == '\n') {
+		} else if (*i == '\n') {
+			if (len == 0) {
+				i--;
+			} else {
 				*i = '\0';
+				printf(":%s:", buffer);
 				return buffer;
 			}
+		} else {
 			len++;
 		}
-
 		i++;
 	}
 
@@ -206,16 +208,7 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 								exit(EXIT_FAILURE);
 							}
 						}
-						if (job.path_std_out != NULL) {
-							if (access(job.path_std_out, W_OK) == 0) {
-								int std_out = open(job.path_std_out, O_WRONLY | O_TRUNC);
-								dup2(std_out, STDOUT_FILENO);
-							} else {
-								int std_out = open(job.path_std_out, O_CREAT | O_WRONLY);
-								chmod(job.path_std_out, S_IRUSR|S_IWUSR|S_IRGRP);
-								dup2(std_out, STDOUT_FILENO);
-							}
-						}
+						set_std_out(&job);
 
 						al_push(job.arguments, "");
 						job.arguments->head[job.arguments->length - 1] = '\0';
@@ -252,26 +245,7 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 			int id = 1;
 			id = fork();
 			if (id == 0) {
-				if (job.path_std_in != NULL) {
-					if (access(job.path_std_in, R_OK) == 0) {
-						int std_in = open(job.path_std_in, O_RDONLY);
-						dup2(std_in, STDIN_FILENO);
-					} else {
-						fprintf(stderr, "mysh: %s: %s\n", job.path_std_in, strerror(errno));
-						clear_job(&job);
-						exit(EXIT_FAILURE);
-					}
-				}
-				if (job.path_std_out != NULL) {
-					if (access(job.path_std_out, W_OK) == 0) {
-						int std_out = open(job.path_std_out, O_WRONLY | O_TRUNC);
-						dup2(std_out, STDOUT_FILENO);
-					} else {
-						int std_out = open(job.path_std_out, O_CREAT | O_WRONLY);
-						chmod(job.path_std_out, S_IRUSR|S_IWUSR|S_IRGRP);
-						dup2(std_out, STDOUT_FILENO);
-					}
-				}
+				set_std_out(&job);
 
 				char* wd = getcwd(NULL, 256);
 				if (wd != NULL) {
@@ -346,16 +320,7 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 									exit(EXIT_FAILURE);
 								}
 							}
-							if (job.path_std_out != NULL) {
-								if (access(job.path_std_out, W_OK) == 0) {
-									int std_out = open(job.path_std_out, O_WRONLY | O_TRUNC);
-									dup2(std_out, STDOUT_FILENO);
-								} else {
-									int std_out = open(job.path_std_out, O_CREAT | O_WRONLY);
-									chmod(job.path_std_out, S_IRUSR|S_IWUSR|S_IRGRP);
-									dup2(std_out, STDOUT_FILENO);
-								}
-							}
+							set_std_out(&job);
 
 							if (which) {
 								printf("%s\n", path);
