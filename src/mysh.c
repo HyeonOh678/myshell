@@ -214,12 +214,53 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 			if (access(job.name, F_OK) == 0) {
 				fileExists = 1;
 				if(access(job.name, X_OK) == 0) {
-					perms = 1;
+					pid = fork();
+					int child_exit_status;
+					if (pid == 0) {
+						if (job.path_std_in != NULL) {
+							if (access(job.path_std_in, R_OK) == 0) {
+								int std_in = open(job.path_std_in, O_RDONLY);
+								dup2(std_in, STDIN_FILENO);
+							} else {
+								fprintf(stderr, "mysh: %s: %s\n", job.path_std_in, strerror(errno));
+								clear_job(&job);
+								exit(EXIT_FAILURE);
+							}
+						}
+						if (job.path_std_out != NULL) {
+							if (access(job.path_std_out, W_OK) == 0) {
+								int std_out = open(job.path_std_out, O_WRONLY | O_TRUNC);
+								dup2(std_out, STDOUT_FILENO);
+							} else {
+								int std_out = open(job.path_std_out, O_CREAT | O_WRONLY);
+								chmod(job.path_std_out, S_IRUSR|S_IWUSR|S_IRGRP);
+								dup2(std_out, STDOUT_FILENO);
+							}
+						}
+
+						al_push(job.arguments, "");
+						job.arguments->head[job.arguments->length - 1] = '\0';
+						
+						if (MYSH_DEBUG) {
+							al_print(job.arguments);
+						}
+
+						int exec_rv = execv(job.name, job.arguments->head);
+						if (exec_rv != 0) {
+							printf("ERROR: %s\n", strerror(errno));
+						}
+						
+					} else {
+						wait(&child_exit_status);
+					}
+
+					clear_job(&job);	
+					return child_exit_status;
 				}
 			}
 
 			if (!fileExists || !perms) {
-				printf("mysh: %s: %s\n", job.name, strerror);
+				fprintf(stderr, "mysh: %s: %s\n", job.name, strerror(errno));
 			}
 			clear_job(&job);
 			return EXIT_FAILURE;
@@ -232,18 +273,54 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 				int id = 1;
 				id = fork();
 				if (id == 0) {
+					if (job.path_std_in != NULL) {
+						if (access(job.path_std_in, R_OK) == 0) {
+							int std_in = open(job.path_std_in, O_RDONLY);
+							dup2(std_in, STDIN_FILENO);
+						} else {
+							fprintf(stderr, "mysh: %s: %s\n", job.path_std_in, strerror(errno));
+							clear_job(&job);
+							exit(EXIT_FAILURE);
+						}
+					}
+					if (job.path_std_out != NULL) {
+						if (access(job.path_std_out, W_OK) == 0) {
+							int std_out = open(job.path_std_out, O_WRONLY | O_TRUNC);
+							dup2(std_out, STDOUT_FILENO);
+						} else {
+							int std_out = open(job.path_std_out, O_CREAT | O_WRONLY);
+							chmod(job.path_std_out, S_IRUSR|S_IWUSR|S_IRGRP);
+							dup2(std_out, STDOUT_FILENO);
+						}
+					}
+
 					char* wd = getcwd(NULL, 256);
 					if (wd != NULL) {
 						printf("%s\n", wd);
 						free(wd);
+						exit(EXIT_SUCCESS);
 					} else {
 						fprintf(stderr, "ERROR: getcwd: %s\n", strerror(errno));
-						return -1;
+						exit(errno);
 					}
+				} else {
+					wait(&prev_return_value);
+					clear_job(&job);
+					return prev_return_value;
 				}
-				wait(&prev_return_value);
 			} else if (strcmp(job.name, "cd") == 0) {
-
+				if (job.arguments->length == 1) {
+						fprintf(stderr, "mysh: cd: expected 1 argument, got 0\n");
+						clear_job(&job);
+						return EXIT_FAILURE;				} else if (job.arguments->length == 2) {
+					if (chdir(al_get(job.arguments, 1)) != 0) {
+						fprintf(stderr, "mysh: %s: %s\n", job.name, strerror(errno));
+						clear_job(&job);
+						return EXIT_FAILURE;
+					}
+					clear_job(&job);
+					return EXIT_SUCCESS;
+				}
 			} else {
 				int which = 0;
 				if (strcmp(job.name, "which") == 0) {
@@ -299,7 +376,8 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 										int std_out = open(job.path_std_out, O_WRONLY | O_TRUNC);
 										dup2(std_out, STDOUT_FILENO);
 									} else {
-										int std_out = open(job.path_std_out, O_CREAT);
+										int std_out = open(job.path_std_out, O_CREAT | O_WRONLY);
+										chmod(job.path_std_out, S_IRUSR|S_IWUSR|S_IRGRP);
 										dup2(std_out, STDOUT_FILENO);
 									}
 								}

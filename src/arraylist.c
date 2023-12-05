@@ -78,13 +78,13 @@ int al_push(arraylist_t *L, char* str)
 }
 
 void al_print (arraylist_t* L) {
-    printf("---\n");
-    printf("Length: %u\n", L->length);
-    printf("Size: %u\n", L->size);
+    fprintf(stderr, "---\n");
+    fprintf(stderr, "Length: %u\n", L->length);
+    fprintf(stderr, "Size: %u\n", L->size);
     for (int i = 0; i < L->length; i++) {
-        printf("a[%d]: \t%p\t\t *a[%d]: \t;%s;\n", i, L->head[i], i, al_get(L, i));
+        fprintf(stderr, "a[%d]: \t%p\t\t *a[%d]: \t;%s;\n", i, L->head[i], i, al_get(L, i));
     }
-    printf("---\n");
+    fprintf(stderr, "---\n");
 }
 
 int al_contains(arraylist_t* L, char* str) {

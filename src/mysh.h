@@ -1,7 +1,7 @@
 #include "arraylist.h"
 
 #ifndef MYSH_DEBUG
-#define MYSH_DEBUG 0
+#define MYSH_DEBUG 1
 #endif
 
 typedef enum _mode_type {

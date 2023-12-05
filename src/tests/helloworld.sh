@@ -1,2 +1,5 @@
-Starting mysh in interactive mode
-mysh> 
+echo hello world
+echo hello world
+echo hello world
+echo hello world
+echo hello world
