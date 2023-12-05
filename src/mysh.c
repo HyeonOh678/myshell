@@ -218,13 +218,11 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 				}
 			}
 
-			if (!fileExists) {
-				if (!perms) {
-					printf("mysh: %s: Permission denied\n", job.name);
-				} else {
-					printf("mysh: %s: No such file or directory\n", job.name);
-				}
+			if (!fileExists || !perms) {
+				printf("mysh: %s: %s\n", job.name, strerror);
 			}
+			clear_job(&job);
+			return EXIT_FAILURE;
 		} else {
 			if (strcmp(job.name, "exit") == 0) {
 				clear_job(&job);
@@ -255,8 +253,8 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 						return EXIT_FAILURE;
 					} else {
 						free(job.name);
-						job.name = malloc(strlen(al_get(job.arguments, 0)) + 1);
-						strcpy(job.name, al_get(job.arguments, 0));
+						job.name = malloc(strlen(al_get(job.arguments, 1)) + 1);
+						strcpy(job.name, al_get(job.arguments, 1));
 					}
 				}
 				const char* dirs[3];
