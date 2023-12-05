@@ -144,3 +144,7 @@ check if anything after <>
 check if args before and after |
 
 pipe output for builtins
+
+bugs: then
+else
+./print_args one two three > a.txt

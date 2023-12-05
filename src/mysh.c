@@ -182,34 +182,14 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 		job.path_std_out = NULL;
 	}
 
-	int rv = parse_args(tokens, &job);
+	int parse_args_rv = parse_args(tokens, &job);
 
 	if (MYSH_DEBUG) {
-		printf("---JOB---\n");
-		if (job.name != NULL)
-			printf("NAME: %s\n", job.name);
-		else
-			printf("NAME: NULL\n");
-		if (job.path_std_in != NULL)
-			printf("STDIN: %s\n", job.path_std_in);
-		else
-			printf("STDIN: NULL\n");
-		if (job.path_std_out != NULL)
-			printf("STDOUT: %s\n", job.path_std_out);
-		else
-			printf("STDOUT: \n");
-		printf("ARGS: \n");
-		al_print(job.arguments);
-		printf("---------\n");
+		print_job(&job);
 	}
 
-	if (rv == EXIT_SUCCESS) {
-		int arg_one_is_path = strchr(job.name, '/') != NULL;
-
-		if (MYSH_DEBUG)
-			printf("%d\n", arg_one_is_path);
-
-		if (arg_one_is_path) {
+	if (parse_args_rv == EXIT_SUCCESS) {
+		if (strchr(job.name, '/') != NULL) {
 			int fileExists = 0, perms = 0;
 			if (access(job.name, F_OK) == 0) {
 				fileExists = 1;
@@ -223,7 +203,6 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 								dup2(std_in, STDIN_FILENO);
 							} else {
 								fprintf(stderr, "mysh: %s: %s\n", job.path_std_in, strerror(errno));
-								clear_job(&job);
 								exit(EXIT_FAILURE);
 							}
 						}
@@ -267,7 +246,8 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 		} else {
 			if (strcmp(job.name, "exit") == 0) {
 				clear_job(&job);
-				exit_mysh();
+				printf("mysh: exiting\n");
+				exit_shell = 1;
 				return EXIT_SUCCESS;
 			} else if (strcmp(job.name, "pwd") == 0) {
 				int id = 1;
@@ -367,7 +347,6 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 									} else {
 										fprintf(stderr, "mysh: %s: %s\n", job.path_std_in, strerror(errno));
 										free(path);
-										clear_job(&job);
 										exit(EXIT_FAILURE);
 									}
 								}
@@ -434,37 +413,46 @@ int create_run_job(arraylist_t* tokens, char* input_stream, char* output_stream)
 // sets mode and validates arguments
 int init(int argc, char** argv) {
 	if (argc == 1) {
-		mode = INTERACTIVE;
-		fd = STDIN_FILENO;
 		printf("Starting mysh in interactive mode\n");
+		fd = STDIN_FILENO;
+		mode = INTERACTIVE;
 		return EXIT_SUCCESS;
 	} else if (argc == 2) {
 		if (access(argv[1], R_OK) == 0) {
-			struct stat file_buffer;
-			if (stat(argv[1], &file_buffer) == 0) {
-				if (S_ISDIR(file_buffer.st_mode) == 0) {
-					fd = open(argv[1], O_RDONLY);
-					if (fd > 0) {
-						mode = BATCH;
-						if (MYSH_DEBUG)
-							printf("Starting mysh in batch mode\n");
-						return EXIT_SUCCESS;
-					} else {
-						fprintf(stderr, "ERROR: Cannot open %s: %s\n", argv[1], strerror(errno));
-					}
-				} else {
-					fprintf(stderr, "ERROR: Cannot run mysh on %s because it is a directory\n", argv[1]);
+			if (is_dir(argv[1]) == 0) {
+				fd = open(argv[1], O_RDONLY);
+				if (fd > 0) {
+					mode = BATCH;
+					return EXIT_SUCCESS;
 				}
-			} else {
-				fprintf(stderr, "Error checking file type for %s: %s\n", argv[1], strerror(errno));
 			} 
-		} else {
-			fprintf(stderr, "ERROR: Invalid file: %s\n", strerror(errno));
 		}
 	} else {
-		fprintf(stderr, "ERROR: Invalid argument count of %d\n", argc);
+		errno = E2BIG;
 	}
+
+	fprintf(stderr, "mysh: ");
+	if (argc == 2) {
+		fprintf(stderr, "%s: ", argv[1]);
+	}
+	fprintf(stderr, "%s\n", strerror(errno));
 	return EXIT_FAILURE;
+}
+
+// return 0 if arg is not a dir
+// return 1 if arg is a dir
+int is_dir (char* arg) {
+	struct stat file_buffer;
+	if (stat(arg, &file_buffer) == 0) {
+		if (S_ISDIR(file_buffer.st_mode) == 0) {
+			return 0;
+		} else {
+			errno = EISDIR;
+			return 1;
+		}
+	} else {
+		return 1;
+	}
 }
 
 int check_conditionals (arraylist_t* arraylist) {
@@ -519,6 +507,7 @@ int parse_args (arraylist_t* tokens, job_info* job) {
 				}
 				job->path_std_in = malloc(strlen(al_get(tokens, i + 1)) + 1);
 				strcpy(job->path_std_in, al_get(tokens, i + 1));
+				printf("%s\n", job->path_std_in);
 				al_remove(tokens, i);
 				al_remove(tokens, i);
 				i -= 1;
@@ -539,12 +528,10 @@ int parse_args (arraylist_t* tokens, job_info* job) {
 	return EXIT_SUCCESS;
 }
 
-void exit_mysh() {
-	printf("mysh: exiting\n");
-	exit_shell = 1;
-}
-
 void clear_job(job_info* job) {
+	if (job == NULL) {
+		return;
+	}
 	if (job->name != NULL){
 		free(job->name);
 	}
@@ -554,4 +541,52 @@ void clear_job(job_info* job) {
 	if(job->path_std_out != NULL) {
 		free(job->path_std_out);
 	}
+}
+
+void print_job(job_info* job) {
+	fprintf(stderr, "=== JOB ===\n");
+	fprintf(stderr, "NAME: %s\n", null_wrapper(job->name));
+	fprintf(stderr, "STDIN: %s\n", null_wrapper(job->path_std_in));
+	fprintf(stderr, "STDOUT: %s\n", null_wrapper(job->path_std_out));
+	// fprintf(stderr, "WRITES_TO_PIPE: %d\n", job->writes_to_pipe);
+	// fprintf(stderr, "READS FROM PIPE: %d\n", job->reads_from_pipe);
+	fprintf(stderr, "ARGS:\n");
+	al_print(job->arguments);
+	fprintf(stderr, "===========\n");
+}
+
+char* null_wrapper(char* field) {
+	if (field != NULL) {
+		return field;
+	} else {
+		return "NULL";
+	}
+}
+
+int set_std_in (job_info* job) {
+	if (job->path_std_in != NULL) {
+		if (access(job->path_std_in, R_OK) == 0) {
+			int std_in = open(job->path_std_in, O_RDONLY);
+			dup2(std_in, STDIN_FILENO);
+			return EXIT_SUCCESS;
+		} else {
+			fprintf(stderr, "mysh: %s: %s\n", job->path_std_in, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+	}
+	return EXIT_SUCCESS;
+}
+
+int set_std_out (job_info* job) {
+	if (job->path_std_out != NULL) {
+		if (access(job->path_std_out, W_OK) == 0) {
+			int std_out = open(job->path_std_out, O_WRONLY | O_TRUNC);
+			dup2(std_out, STDOUT_FILENO);
+		} else {
+			int std_out = open(job->path_std_out, O_CREAT | O_WRONLY);
+			chmod(job->path_std_out, S_IRUSR|S_IWUSR|S_IRGRP);
+			dup2(std_out, STDOUT_FILENO);
+		}
+	}
+	return EXIT_SUCCESS;
 }
