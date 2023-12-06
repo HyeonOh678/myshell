@@ -47,16 +47,10 @@ int main (int argc, char **argv) {
 			
 			if (tokenizer_rv != 0) {
 				if(arraylist->length > 0) {
-					int check_conditionals_rv = check_conditionals(arraylist);
-
-					if (check_conditionals_rv == EXIT_SUCCESS) {
+					if (check_conditionals(arraylist) == EXIT_SUCCESS) {
 						int pipes = al_contains(arraylist, "|");
 						if (pipes == 0) {
-							if (create_run_job(arraylist, -1, -1) == EXIT_SUCCESS) {
-								prev_return_value = EXIT_SUCCESS;
-							} else {
-								prev_return_value = EXIT_FAILURE;
-							}
+							create_run_job(arraylist, -1, -1);
 						} else if (pipes == 1) {
 							arraylist_t* left = arraylist;
 							arraylist_t* right = al_create(1);
@@ -250,8 +244,17 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 				fprintf(stderr, "mysh: %s: %s\n", job.name, strerror(errno));
 			}
 			clear_job(&job);
+			prev_return_value = 0;
 			return EXIT_FAILURE;
 		} else if (strcmp(job.name, "exit") == 0) {
+			if (job.path_std_out != NULL) {
+				if (fork() == 0) {
+					set_std_out(&job);
+					exit(EXIT_SUCCESS);
+				} else {
+					wait(&prev_return_value);
+				}
+			}
 			clear_job(&job);
 			printf("mysh: exiting\n");
 			exit_shell = 1;
@@ -323,7 +326,6 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 					fileExists = 1;
 					if(access(path, X_OK) == 0) {
 						pid = fork();
-						int child_exit_status;
 						if (pid == 0) {
 							set_std_in(&job);
 							set_std_out(&job);
@@ -331,9 +333,6 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 							if (which) {
 								printf("%s\n", path);
 								free(path);
-								clear_job(&job);
-								// if (job.path_std_in)
-								// close(std_in);
 								exit(EXIT_SUCCESS);
 							} else {
 								al_push(job.arguments, "");
@@ -352,12 +351,12 @@ int create_run_job(arraylist_t* tokens, int pipe_input_fd, int pipe_output_fd) {
 								}
 							}
 						} else {
-							wait(&child_exit_status);
+							wait(&prev_return_value);
 						}
 
 						free(path);
 						clear_job(&job);	
-						return child_exit_status;
+						return prev_return_value;
 					}
 				}
 				free(path);
@@ -425,24 +424,25 @@ int is_dir (char* arg) {
 }
 
 int check_conditionals (arraylist_t* arraylist) {
-	int cmp = -1;
 	if (strcmp(al_get(arraylist, 0), "then") == 0) {
-		cmp = EXIT_SUCCESS;
+		if (prev_return_value == EXIT_SUCCESS) {
+			al_remove(arraylist, 0);
+			return EXIT_SUCCESS;
+		} else if (prev_return_value == -1) {
+			fprintf(stderr, "mysh: cannot run conditional job when there is no previous state\n");
+		}
+		return EXIT_FAILURE;
 	} else if (strcmp(al_get(arraylist, 0), "else") == 0) {
-		cmp = EXIT_FAILURE;
+		if (prev_return_value != EXIT_SUCCESS && prev_return_value != -1) {
+			al_remove(arraylist, 0);
+			return EXIT_SUCCESS;
+		} else if (prev_return_value == -1) {
+			fprintf(stderr, "mysh: cannot run conditional job when there is no previous state\n");
+		}
+		return EXIT_FAILURE;
 	} else {
 		return EXIT_SUCCESS;
 	}
-
-	if (prev_return_value == cmp) {
-		al_remove(arraylist, 0);
-		return EXIT_SUCCESS;
-	}
-	
-	if (prev_return_value == -1) {
-		fprintf(stderr, "mysh: cannot run conditional job when there is no previous state\n");
-	}
-	return EXIT_FAILURE;
 }
 
 int parse_args (arraylist_t* tokens, job_info* job) {
@@ -537,14 +537,12 @@ int set_std_in (job_info* job) {
 		if (access(job->path_std_in, R_OK) == 0) {
 			int std_in = open(job->path_std_in, O_RDONLY);
 			dup2(std_in, STDIN_FILENO);
-			return EXIT_SUCCESS;
 		} else {
 			fprintf(stderr, "mysh: %s: %s\n", job->path_std_in, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
-	} else {
+	} else if (job->pipe_std_in != -1) {
 		dup2(job->pipe_std_in, STDIN_FILENO);
-		return EXIT_SUCCESS;
 	}
 	return EXIT_SUCCESS;
 }
@@ -559,9 +557,8 @@ int set_std_out (job_info* job) {
 			chmod(job->path_std_out, S_IRUSR|S_IWUSR|S_IRGRP);
 			dup2(std_out, STDOUT_FILENO);
 		}
-	} else {
+	} else if (job->pipe_std_out != -1) {
 		dup2(job->pipe_std_out, STDOUT_FILENO);
-		return EXIT_SUCCESS;
 	}
 	return EXIT_SUCCESS;
 }
