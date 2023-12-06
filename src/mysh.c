@@ -425,6 +425,11 @@ int is_dir (char* arg) {
 
 int check_conditionals (arraylist_t* arraylist) {
 	if (strcmp(al_get(arraylist, 0), "then") == 0) {
+		if (arraylist->length == 1) {
+			fprintf(stderr, "mysh: syntax error: list a command after then\n");
+			return EXIT_FAILURE;				
+		}
+
 		if (prev_return_value == EXIT_SUCCESS) {
 			al_remove(arraylist, 0);
 			return EXIT_SUCCESS;
@@ -433,6 +438,11 @@ int check_conditionals (arraylist_t* arraylist) {
 		}
 		return EXIT_FAILURE;
 	} else if (strcmp(al_get(arraylist, 0), "else") == 0) {
+		if (arraylist->length == 1) {
+			fprintf(stderr, "mysh: syntax error: list a command after else\n");
+			return EXIT_FAILURE;
+		}
+
 		if (prev_return_value != EXIT_SUCCESS && prev_return_value != -1) {
 			al_remove(arraylist, 0);
 			return EXIT_SUCCESS;
