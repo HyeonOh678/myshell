@@ -10,6 +10,8 @@ Hyeon Min Oh (hmo18)
 
 ## How to Compile
 
+**Please compile in directory myshell**
+
 To compile mysh:
 
     make mysh
