@@ -164,7 +164,7 @@ al_destroy(my_al);
 
 ### Testing Mysh
 
-We made mock programs which interact with arguments, take input from stdin, and write to stdout to test the mysh's pipe and redirection functionality
+We made mock programs which interact with arguments, take input from stdin, and write to stdout to test the mysh's pipe and redirection functionality. We also wrote some shell scripts in src/tests to run in mysh's batch mode. We even spawned mysh within mysh to test its robustness.
 
 The following are useful to test mysh but not necessary for mysh to run:
 
